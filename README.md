@@ -2,7 +2,7 @@
 
 | Student's name | SCIPER |
 | -------------- | ------ |
-| | |
+| Anton Svet | 347212 |
 | | |
 | | |
 
