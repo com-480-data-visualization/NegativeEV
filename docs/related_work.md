@@ -62,7 +62,7 @@
 ## 3. BTC 5-Minute Markets - Specific Research
 
 ### No published analysis exists
-- btc-updown-5m markets launched ~December 2024
+- btc-updown-5m markets launched in 2025, first trades in early February 2026
 - Generated $25.2M in volume in first 40 hours (~$52K per window)
 - ~288 markets per day per asset
 - Source: https://longbridge.com/en/news/275964981
