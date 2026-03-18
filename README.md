@@ -19,9 +19,15 @@ Please, fill the following sections about your project.
 
 ### Dataset
 
-> Find a dataset (or multiple) that you will explore. Assess the quality of the data it contains and how much preprocessing / data-cleaning it will require before tackling visualization. We recommend using a standard dataset as this course is not about scraping nor data processing.
->
-> Hint: some good pointers for finding quality publicly available datasets ([Google dataset search](https://datasetsearch.research.google.com/), [Kaggle](https://www.kaggle.com/datasets), [OpenSwissData](https://opendata.swiss/en/), [SNAP](https://snap.stanford.edu/data/) and [FiveThirtyEight](https://data.fivethirtyeight.com/)).
+Our project relies on a custom dataset combining **Polymarket’s Bitcoin 5-minute** prediction markets with **Binance** Bitcoin price data. Since no ready-made dataset exists for this market type, we constructed it by querying Polymarket API endpoints to collect market metadata, outcomes, and trade sequences, and matched it with Binance spot BTC prices.
+
+In these markets, users bet on whether the price of Bitcoin will be higher after 5 minutes relative to the opening price. Each market offers two tokens: **YES** (price goes up) and **NO** (price does not go up). Users can buy and sell tokens continuously during the **5-minute window**, and their prices reflect the market-implied probability of each outcome. At resolution, the winning token pays **1 USDC**, while the other becomes worthless.
+
+This format was introduced in **mid-December 2025**, with consistent activity starting in early **February 2026**. Each market lasts **5 minutes (288 per day)**, and our dataset contains **9,000+** events, forming a unique high-frequency financial dataset.
+
+The data is of high quality: outcomes are clearly defined and timestamps are precise, allowing us to track how implied probabilities evolve during each event. Preprocessing includes aligning trades with Binance prices, removing anomalous rounds, and computing variables such as time remaining and price change. Due to API limitations, we only retain transactions involving **≥10 tokens**, filtering out negligible trades while preserving most meaningful activity.
+
+(The dataset will be made publicly available at a later stage, e.g., via **Hugging Face** or a similar platform.)
 
 ### Problematic
 
