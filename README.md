@@ -25,7 +25,7 @@ Please, fill the following sections about your project.
 
 ### Problematic
 
-Prediction markets have emerged as powerful forecasting tools. In the 2024 US elections, Polymarket correctly called 49 of 50 states, outperforming every major polling aggregator. The theoretical foundation — the "wisdom of crowds" — posits that when participants stake real capital, market prices converge to true event probabilities.
+Prediction markets have emerged as powerful forecasting tools. In the 2024 US elections, Polymarket correctly called 49 of 50 states, outperforming every major polling aggregator. The theoretical foundation, the "wisdom of crowds", posits that when participants stake real capital, market prices converge to true event probabilities.
 
 But does this hold at micro-durations? Polymarket's Bitcoin 5-minute markets (btc-updown-5m) create a new market every 5 minutes: users bet whether BTC will go up or down relative to the opening price. With ~288 markets daily and thousands resolved since December 2024, we have an unprecedented dataset to test calibration at ultra-short timescales.
 
@@ -44,7 +44,7 @@ Target audience: traders seeking pricing inefficiencies, researchers in market m
 
 **Existing work with prediction market data:** [Brier.fyi](https://brier.fyi/charts/polymarket/) analyzes 98,000+ Polymarket markets with 2D calibration curves, showing that contracts at 70% resolve correctly ~70% of the time. However, it focuses on long-duration markets and uses static 2D plots. Polymarket Analytics and Dune dashboards track positions and on-chain activity but lack probabilistic calibration. Academic work by Tsang & Yang (2025) analyzes Polymarket's 2024 election microstructure, while Becker (2025) documents systematic wealth transfer from takers to makers and identifies an "Optimism Tax."
 
-**Originality of our approach:** No prior work combines: (1) 3D surface visualization, (2) ultra-short-term prediction markets (5 min), and (3) calibration analysis comparing token prices to actual outcome frequencies. The closest analogy is the implied volatility surface from options finance — we adapt this concept from (strike × expiry × IV) to (token price × time remaining × real probability). Our dataset (btc-updown-5m, since Dec 2024) has not been studied in any published work.
+**Originality of our approach:** No prior work combines: (1) 3D surface visualization, (2) ultra-short-term prediction markets (5 min), and (3) calibration analysis comparing token prices to actual outcome frequencies. The closest analogy is the implied volatility surface from options finance: we adapt this concept from (strike × expiry × IV) to (token price × time remaining × real probability). Our dataset (btc-updown-5m, since Dec 2024) has not been studied in any published work.
 
 **Visual inspiration:** The [NYT Election Needle](https://www.nytimes.com/interactive/2020/11/03/us/elections/forecast-president.html) for communicating probability under uncertainty. FiveThirtyEight's interactive forecast models. [The Pudding](https://pudding.cool/)'s scrollytelling approach for data narratives. Plotly.js and d3-x3d for interactive 3D surface rendering. Past COM-480 projects (Lausanne Transportation 2023, Formula 1 2024) as benchmarks for expected quality.
 

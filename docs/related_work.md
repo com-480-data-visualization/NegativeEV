@@ -1,4 +1,4 @@
-# Related Work — NegativeEV (Polymarket BTC 5-min)
+# Related Work - NegativeEV (Polymarket BTC 5-min)
 
 ## 1. Existing Visualization Tools & Dashboards
 
@@ -14,7 +14,7 @@
 - Focused on portfolio/position tracking, not calibration analysis
 - URL: https://www.polymarketanalytics.com/
 
-### Dune Analytics — Polymarket
+### Dune Analytics - Polymarket
 - On-chain dashboards using Polygon blockchain data
 - Tables: market_trades, market_prices_hourly/daily, positions, market_details
 - Useful for quantitative analysis but no probabilistic calibration visualizations
@@ -46,7 +46,7 @@
 
 ### "Makers and Takers: Economics of Kalshi" (Whelan)
 - Low-price contracts earn less than break-even after fees
-- High-price contracts earn more — favorite-longshot bias in regulated markets
+- High-price contracts earn more, favorite-longshot bias in regulated markets
 - URL: https://www.karlwhelan.com/Papers/Kalshi.pdf
 
 ### "How Manipulable Are Prediction Markets?" (2025)
@@ -59,7 +59,7 @@
 - Wolfers & Zitzewitz (2008): Market prices are good probability estimates long-run
 - Atanasov et al. (2015): Markets beat simple polls, but algorithmic polls can match
 
-## 3. BTC 5-Minute Markets — Specific Research
+## 3. BTC 5-Minute Markets - Specific Research
 
 ### No published analysis exists
 - btc-updown-5m markets launched ~December 2024
