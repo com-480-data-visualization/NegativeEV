@@ -19,7 +19,7 @@ Please, fill the following sections about your project.
 
 ### Dataset
 
-Our project relies on a custom dataset combining **Polymarket’s Bitcoin 5-minute** prediction markets with **Binance** Bitcoin price data. Since no ready-made dataset exists for this market type, we constructed it by querying Polymarket API endpoints to collect market metadata, outcomes, and trade sequences, and matched it with Binance spot BTC prices.
+Our project relies on a custom dataset combining **[Polymarket’s Bitcoin 5-minute](https://polymarket.com/crypto/5M)** prediction markets with **[Binance](https://www.binance.com/en/price/bitcoin)** Bitcoin price data. Since no ready-made dataset exists for this market type, we constructed it by querying [Polymarket API](https://docs.polymarket.com/api-reference/introduction) endpoints to collect market metadata, outcomes, and trade sequences, and matched it with Binance spot BTC prices.
 
 In these markets, users bet on whether the price of Bitcoin will be higher after 5 minutes relative to the opening price. Each market offers two tokens: **YES** (price goes up) and **NO** (price does not go up). Users can buy and sell tokens continuously during the **5-minute window**, and their prices reflect the market-implied probability of each outcome. At resolution, the winning token pays **1 USDC**, while the other becomes worthless.
 
@@ -29,6 +29,7 @@ The data is of high quality: outcomes are clearly defined and timestamps are pre
 
 (The dataset will be made publicly available at a later stage, e.g., via **Hugging Face** or a similar platform.)
 
+*Note: Polymarket is not directly accessible from Switzerland, and access may require the use of a VPN connection.*
 ### Problematic
 
 Prediction markets have emerged as powerful forecasting tools. In the 2024 US elections, Polymarket correctly called 49 of 50 states, outperforming every major polling aggregator. The theoretical foundation, the "wisdom of crowds", posits that when participants stake real capital, market prices converge to true event probabilities.
