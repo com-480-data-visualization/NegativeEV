@@ -58,11 +58,11 @@ We built a custom dataset by querying Polymarket's API and matching trades with 
 
 **Last trade price by outcome** - This histogram (log scale) shows the distribution of the last Up token price before market resolution, split by actual outcome. In the vast majority of cases the token is worth 0 or 1 just before the close, since uncertainty is virtually zero at that point. The remaining values are mostly noise, except for a notable spike at 0.5, which corresponds to the rare markets where BTC experienced a very large price swing and doubt persisted until the very last second.
 
-![Last trade price by outcome](notebooks/last_trade_price_outcome.png)
+![Last trade price by outcome](docs/images/last_trade_price_outcome.png)
 
 **Market calibration: price vs realized outcome** - Using our per-second timeseries, we compare the market's implied probability (token price) to the actual observed frequency of Up outcomes at three time horizons. The diagonal represents perfect calibration. Just after opening, the curve is nearly flat around 0.5 - the market has no predictive power yet. By 3 minutes before close, calibration improves significantly. Just before closing, the curve hugs the diagonal almost perfectly, showing the market accurately prices outcomes as it approaches resolution.
 
-![Market calibration](notebooks/market_calibration.png)
+![Market calibration](docs/images/market_calibration.png)
 
 ### Related work
 
