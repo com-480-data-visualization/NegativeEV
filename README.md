@@ -56,11 +56,11 @@ We built a custom dataset by querying Polymarket's API and matching trades with 
 | Up rate | 51.4% (4,719 Up / 4,462 Down) |
 | Median bid-ask spread | 1 cent |
 
-**Last trade price by outcome** - The last traded price acts as the market's final implied probability. Splitting by actual outcome reveals a clear separation: Up markets cluster near price 1, Down markets near 0, confirming that the market is informative. The overlap around 0.5 represents genuinely uncertain markets.
+**Last trade price by outcome** - This histogram (log scale) shows the distribution of the last Up token price before market resolution, split by actual outcome. In the vast majority of cases the token is worth 0 or 1 just before the close, since uncertainty is virtually zero at that point. The remaining values are mostly noise, except for a notable spike at 0.5, which corresponds to the rare markets where BTC experienced a very large price swing and doubt persisted until the very last second.
 
 ![Last trade price by outcome](notebooks/last_trade_price_outcome.png)
 
-**Calibration error across time horizons** - We measure calibration error (actual Up rate minus implied probability) at 5, 4, 3, 2, and 1 minute before close. The 5-min curve shows the largest deviations, while the 1-min curve is nearly flat at zero. This confirms that price accuracy improves as the market approaches resolution, which is the core dynamic our visualization will explore.
+**Calibration error across time horizons** - For each time horizon (5, 4, 3, 2, 1 min before close), we bucket markets by their implied probability (average trade price) and compare it to the actual Up rate. The y-axis shows the calibration error: actual Up rate minus implied probability. A perfectly calibrated market would sit at y = 0. At market open (5 min), implied probabilities stay between 0.4 and 0.6 and the outcome is essentially random. Interestingly, after just 1 minute the calibration already improves noticeably, and it keeps getting better as the close approaches - the 1-min curve is nearly flat at zero.
 
 ![Calibration error](notebooks/calibration_error.png)
 
