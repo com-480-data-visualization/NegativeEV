@@ -44,8 +44,25 @@ Target audience: traders seeking pricing inefficiencies, researchers in market m
 
 ### Exploratory Data Analysis
 
-> Pre-processing of the data set you chose
-> - Show some basic statistics and get insights about the data
+We built a custom dataset by querying Polymarket's API and matching trades with Binance BTC spot prices. After cleaning and feature engineering ([`build_dataset.py`](scripts/build_dataset.py)), the final dataset spans **Feb 12 - Mar 15, 2026** with **32 features** per market. Full EDA notebook: [`eda_btc5m.ipynb`](notebooks/eda_btc5m.ipynb).
+
+| Metric | Value |
+|---|---|
+| Markets | 9,181 |
+| Total volume | $686 M |
+| Median volume / market | $80,522 |
+| Total trades | 16.8 M |
+| Avg trades / market | 1,835 |
+| Up rate | 51.4% (4,719 Up / 4,462 Down) |
+| Median bid-ask spread | 1 cent |
+
+**Last trade price by outcome** - The last traded price acts as the market's final implied probability. Splitting by actual outcome reveals a clear separation: Up markets cluster near price 1, Down markets near 0, confirming that the market is informative. The overlap around 0.5 represents genuinely uncertain markets.
+
+![Last trade price by outcome](notebooks/last_trade_price_outcome.png)
+
+**Calibration error across time horizons** - We measure calibration error (actual Up rate minus implied probability) at 5, 4, 3, 2, and 1 minute before close. The 5-min curve shows the largest deviations, while the 1-min curve is nearly flat at zero. This confirms that price accuracy improves as the market approaches resolution, which is the core dynamic our visualization will explore.
+
+![Calibration error](notebooks/calibration_error.png)
 
 ### Related work
 

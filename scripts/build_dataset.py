@@ -55,6 +55,12 @@ FIELDNAMES = [
     "total_trade_size",
     "avg_trade_price",
     "up_buy_pct",
+    # Implied Up probability at each minute before close
+    "implied_prob_5min",
+    "implied_prob_4min",
+    "implied_prob_3min",
+    "implied_prob_2min",
+    "implied_prob_1min",
 ]
 
 
@@ -141,16 +147,69 @@ def parse_btc_prices(prices: list[dict]) -> dict:
     }
 
 
-def parse_trades(trades: list[dict]) -> dict:
-    """Compute trade-level features."""
+CHECKPOINT_OFFSETS = {
+    "implied_prob_5min": 0,
+    "implied_prob_4min": 60,
+    "implied_prob_3min": 120,
+    "implied_prob_2min": 180,
+    "implied_prob_1min": 240,
+}
+
+
+def _trade_to_implied_up(trade: dict) -> float | None:
+    """Convert a trade to the implied Up probability."""
+    price = float(trade.get("price", 0))
+    outcome = trade.get("outcome", "")
+    if outcome == "Up":
+        return price
+    elif outcome == "Down":
+        return 1.0 - price
+    return None
+
+
+def _implied_prob_at_checkpoints(trades: list[dict], event_ts: int) -> dict:
+    """Get the implied Up probability at each checkpoint (5,4,3,2,1 min before close).
+
+    Close = event_ts + 300. For each checkpoint, we find the last trade
+    whose timestamp <= checkpoint and extract the implied Up probability.
+    """
+    empty = {k: "" for k in CHECKPOINT_OFFSETS}
     if not trades:
-        return {
+        return empty
+
+    sorted_trades = sorted(trades, key=lambda t: t.get("timestamp", 0))
+
+    result = {}
+    for label, offset in CHECKPOINT_OFFSETS.items():
+        cutoff_ts = event_ts + offset
+        last_prob = None
+        for t in sorted_trades:
+            ts = t.get("timestamp", 0)
+            if ts <= cutoff_ts:
+                prob = _trade_to_implied_up(t)
+                if prob is not None:
+                    last_prob = prob
+            else:
+                break
+        result[label] = round(last_prob, 4) if last_prob is not None else ""
+
+    return result
+
+
+def parse_trades(trades: list[dict], event_ts: int) -> dict:
+    """Compute trade-level features."""
+    implied_probs = _implied_prob_at_checkpoints(trades, event_ts)
+
+    if not trades:
+        base = {
             "n_trades": 0,
             "n_unique_traders": 0,
             "total_trade_size": 0,
             "avg_trade_price": "",
             "up_buy_pct": "",
         }
+        base.update(implied_probs)
+        return base
 
     n_trades = len(trades)
     wallets = {t.get("proxyWallet", "") for t in trades}
@@ -165,13 +224,15 @@ def parse_trades(trades: list[dict]) -> dict:
     up_buys = sum(1 for t in trades if t.get("outcome") == "Up" and t.get("side") == "BUY")
     up_buy_pct = up_buys / n_trades if n_trades > 0 else 0
 
-    return {
+    result = {
         "n_trades": n_trades,
         "n_unique_traders": n_unique_traders,
         "total_trade_size": round(total_trade_size, 4),
         "avg_trade_price": round(avg_trade_price, 4),
         "up_buy_pct": round(up_buy_pct, 4),
     }
+    result.update(implied_probs)
+    return result
 
 
 def process_market_dir(dir_path: Path) -> dict | None:
@@ -211,7 +272,7 @@ def process_market_dir(dir_path: Path) -> dict | None:
     row.update(parse_btc_prices(btc_prices))
 
     trades = load_jsonl(trades_file) if trades_file.exists() else []
-    row.update(parse_trades(trades))
+    row.update(parse_trades(trades, event_ts))
 
     return row
 
