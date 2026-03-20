@@ -17,6 +17,7 @@ env/
 # Large data files
 *.json
 !data/processed/*.csv
+data/raw/
 
 # OS files
 .DS_Store
