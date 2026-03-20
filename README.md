@@ -44,7 +44,7 @@ Target audience: traders seeking pricing inefficiencies, researchers in market m
 
 ### Exploratory Data Analysis
 
-We built a custom dataset by querying Polymarket's API and matching trades with Binance BTC spot prices. After cleaning and feature engineering ([`build_dataset.py`](scripts/build_dataset.py)), the final dataset spans **Feb 12 - Mar 15, 2026** with **32 features** per market. Full EDA notebook: [`eda_btc5m.ipynb`](notebooks/eda_btc5m.ipynb).
+We built a custom dataset by querying Polymarket's API and matching trades with Binance BTC spot prices. Our pipeline ([`build_dataset.py`](scripts/build_dataset.py)) produces two outputs: a **summary CSV** (1 row per market, 27 features) and a **timeseries Parquet** (1 row per market per second, 300 rows/market) containing the implied probability and BTC price at each second. The dataset spans **Feb 12 - Mar 15, 2026**. Full EDA notebook: [`eda_btc5m.ipynb`](notebooks/eda_btc5m.ipynb).
 
 | Metric | Value |
 |---|---|
@@ -60,9 +60,9 @@ We built a custom dataset by querying Polymarket's API and matching trades with 
 
 ![Last trade price by outcome](notebooks/last_trade_price_outcome.png)
 
-**Calibration error across time horizons** - For each time horizon (5, 4, 3, 2, 1 min before close), we bucket markets by their implied probability (average trade price) and compare it to the actual Up rate. The y-axis shows the calibration error: actual Up rate minus implied probability. A perfectly calibrated market would sit at y = 0. At market open (5 min), implied probabilities stay between 0.4 and 0.6 and the outcome is essentially random. Interestingly, after just 1 minute the calibration already improves noticeably, and it keeps getting better as the close approaches - the 1-min curve is nearly flat at zero.
+**Market calibration: price vs realized outcome** - Using our per-second timeseries, we compare the market's implied probability (token price) to the actual observed frequency of Up outcomes at three time horizons. The diagonal represents perfect calibration. Just after opening, the curve is nearly flat around 0.5 - the market has no predictive power yet. By 3 minutes before close, calibration improves significantly. Just before closing, the curve hugs the diagonal almost perfectly, showing the market accurately prices outcomes as it approaches resolution.
 
-![Calibration error](notebooks/calibration_error.png)
+![Market calibration](notebooks/calibration_error.png)
 
 ### Related work
 

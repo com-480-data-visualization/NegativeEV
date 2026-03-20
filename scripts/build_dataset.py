@@ -1,12 +1,14 @@
 """
-Build a consolidated CSV from the raw per-market data in data/raw/tradeData_datapack/tradeData/.
+Build two datasets from the raw per-market data in data/raw/tradeData_datapack/tradeData/.
 
 Each subdirectory btc5min_<ts> contains:
   - market.json    : Polymarket metadata + resolution
-  - btc_prices.jsonl : second-by-second BTC/USD prices (Chainlink)
+  - btc_prices.jsonl : second-by-second BTC/USD prices (Binance)
   - trades.jsonl   : individual trades on the market
 
-Output: data/processed/btc_5m_full.csv  (one row per market)
+Outputs:
+  - data/processed/btc_5m_full.csv      (one row per market, summary features)
+  - data/processed/btc_5m_timeseries.parquet  (one row per market per second, 300 rows/market)
 """
 
 import json
@@ -14,6 +16,8 @@ import os
 import sys
 import csv
 import numpy as np
+import pyarrow as pa
+import pyarrow.parquet as pq
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,7 +25,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw" / "tradeData_datapack" / "tradeData"
-OUT_PATH = ROOT / "data" / "processed" / "btc_5m_full.csv"
+OUT_CSV = ROOT / "data" / "processed" / "btc_5m_full.csv"
+OUT_PARQUET = ROOT / "data" / "processed" / "btc_5m_timeseries.parquet"
 
 FIELDNAMES = [
     "slug",
@@ -55,12 +60,6 @@ FIELDNAMES = [
     "total_trade_size",
     "avg_trade_price",
     "up_buy_pct",
-    # Implied Up probability at each minute before close
-    "implied_prob_5min",
-    "implied_prob_4min",
-    "implied_prob_3min",
-    "implied_prob_2min",
-    "implied_prob_1min",
 ]
 
 
@@ -147,15 +146,6 @@ def parse_btc_prices(prices: list[dict]) -> dict:
     }
 
 
-CHECKPOINT_OFFSETS = {
-    "implied_prob_5min": 0,
-    "implied_prob_4min": 60,
-    "implied_prob_3min": 120,
-    "implied_prob_2min": 180,
-    "implied_prob_1min": 240,
-}
-
-
 def _trade_to_implied_up(trade: dict) -> float | None:
     """Convert a trade to the implied Up probability."""
     price = float(trade.get("price", 0))
@@ -167,49 +157,16 @@ def _trade_to_implied_up(trade: dict) -> float | None:
     return None
 
 
-def _implied_prob_at_checkpoints(trades: list[dict], event_ts: int) -> dict:
-    """Get the implied Up probability at each checkpoint (5,4,3,2,1 min before close).
-
-    Close = event_ts + 300. For each checkpoint, we find the last trade
-    whose timestamp <= checkpoint and extract the implied Up probability.
-    """
-    empty = {k: "" for k in CHECKPOINT_OFFSETS}
-    if not trades:
-        return empty
-
-    sorted_trades = sorted(trades, key=lambda t: t.get("timestamp", 0))
-
-    result = {}
-    for label, offset in CHECKPOINT_OFFSETS.items():
-        cutoff_ts = event_ts + offset
-        last_prob = None
-        for t in sorted_trades:
-            ts = t.get("timestamp", 0)
-            if ts <= cutoff_ts:
-                prob = _trade_to_implied_up(t)
-                if prob is not None:
-                    last_prob = prob
-            else:
-                break
-        result[label] = round(last_prob, 4) if last_prob is not None else ""
-
-    return result
-
-
-def parse_trades(trades: list[dict], event_ts: int) -> dict:
+def parse_trades(trades: list[dict]) -> dict:
     """Compute trade-level features."""
-    implied_probs = _implied_prob_at_checkpoints(trades, event_ts)
-
     if not trades:
-        base = {
+        return {
             "n_trades": 0,
             "n_unique_traders": 0,
             "total_trade_size": 0,
             "avg_trade_price": "",
             "up_buy_pct": "",
         }
-        base.update(implied_probs)
-        return base
 
     n_trades = len(trades)
     wallets = {t.get("proxyWallet", "") for t in trades}
@@ -224,19 +181,66 @@ def parse_trades(trades: list[dict], event_ts: int) -> dict:
     up_buys = sum(1 for t in trades if t.get("outcome") == "Up" and t.get("side") == "BUY")
     up_buy_pct = up_buys / n_trades if n_trades > 0 else 0
 
-    result = {
+    return {
         "n_trades": n_trades,
         "n_unique_traders": n_unique_traders,
         "total_trade_size": round(total_trade_size, 4),
         "avg_trade_price": round(avg_trade_price, 4),
         "up_buy_pct": round(up_buy_pct, 4),
     }
-    result.update(implied_probs)
-    return result
 
 
-def process_market_dir(dir_path: Path) -> dict | None:
-    """Process a single btc5min_<ts> directory into one row."""
+def build_timeseries(trades: list[dict], btc_prices: list[dict],
+                     event_ts: int, winner_binary: int) -> list[dict]:
+    """Build 300 rows (one per second) for a single market.
+
+    For each second 0..299:
+      - btc_price: raw BTC price from btc_prices.jsonl
+      - btc_pct_change: (price - open) / open * 100
+      - implied_prob: forward-filled implied Up probability from trades
+    """
+    btc_by_sec = {}
+    for p in btc_prices:
+        offset = p["timestamp"] - event_ts
+        if 0 <= offset < 300:
+            btc_by_sec[offset] = p["price"]
+
+    sorted_trades = sorted(trades, key=lambda t: t.get("timestamp", 0))
+    trade_idx = 0
+    n_trades = len(sorted_trades)
+
+    btc_open = btc_by_sec.get(0)
+    current_prob = None
+    rows = []
+
+    for sec in range(300):
+        ts = event_ts + sec
+        while trade_idx < n_trades and sorted_trades[trade_idx].get("timestamp", 0) <= ts:
+            prob = _trade_to_implied_up(sorted_trades[trade_idx])
+            if prob is not None:
+                current_prob = prob
+            trade_idx += 1
+
+        btc_price = btc_by_sec.get(sec)
+        if btc_price is not None and btc_open is not None and btc_open != 0:
+            pct = (btc_price - btc_open) / btc_open * 100
+        else:
+            pct = None
+
+        rows.append({
+            "event_timestamp": event_ts,
+            "second": sec,
+            "implied_prob": round(current_prob, 4) if current_prob is not None else None,
+            "btc_price": round(btc_price, 2) if btc_price is not None else None,
+            "btc_pct_change": round(pct, 6) if pct is not None else None,
+            "winner_binary": winner_binary,
+        })
+
+    return rows
+
+
+def process_market_dir(dir_path: Path) -> tuple[dict, list[dict]] | None:
+    """Process a single btc5min_<ts> directory into one summary row + 300 timeseries rows."""
     folder_name = dir_path.name
     if not folder_name.startswith("btc5min_"):
         return None
@@ -272,9 +276,13 @@ def process_market_dir(dir_path: Path) -> dict | None:
     row.update(parse_btc_prices(btc_prices))
 
     trades = load_jsonl(trades_file) if trades_file.exists() else []
-    row.update(parse_trades(trades, event_ts))
+    row.update(parse_trades(trades))
 
-    return row
+    winner_binary = row.get("winner_binary", "")
+    wb = int(winner_binary) if winner_binary != "" else -1
+    ts_rows = build_timeseries(trades, btc_prices, event_ts, wb)
+
+    return row, ts_rows
 
 
 def main():
@@ -285,15 +293,18 @@ def main():
     dirs = sorted([d for d in RAW_DIR.iterdir() if d.is_dir() and d.name.startswith("btc5min_")])
     print(f"Found {len(dirs)} market directories")
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
     rows = []
+    all_ts_rows = []
     errors = 0
     for i, d in enumerate(dirs):
         try:
-            row = process_market_dir(d)
-            if row:
+            result = process_market_dir(d)
+            if result:
+                row, ts_rows = result
                 rows.append(row)
+                all_ts_rows.extend(ts_rows)
         except Exception as e:
             errors += 1
             if errors <= 10:
@@ -304,12 +315,25 @@ def main():
 
     rows.sort(key=lambda r: r["event_timestamp"])
 
-    with open(OUT_PATH, "w", encoding="utf-8", newline="") as f:
+    with open(OUT_CSV, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"\nSaved {len(rows)} rows to {OUT_PATH}")
+    print(f"\nSaved {len(rows)} rows to {OUT_CSV}")
+
+    ts_table = pa.table({
+        "event_timestamp": pa.array([r["event_timestamp"] for r in all_ts_rows], type=pa.int64()),
+        "second": pa.array([r["second"] for r in all_ts_rows], type=pa.int16()),
+        "implied_prob": pa.array([r["implied_prob"] for r in all_ts_rows], type=pa.float32()),
+        "btc_price": pa.array([r["btc_price"] for r in all_ts_rows], type=pa.float64()),
+        "btc_pct_change": pa.array([r["btc_pct_change"] for r in all_ts_rows], type=pa.float32()),
+        "winner_binary": pa.array([r["winner_binary"] for r in all_ts_rows], type=pa.int8()),
+    })
+    pq.write_table(ts_table, OUT_PARQUET, compression="snappy")
+
+    print(f"Saved {len(all_ts_rows)} rows to {OUT_PARQUET}")
+    print(f"  ({len(all_ts_rows) // 300} markets x 300 seconds)")
     print(f"Errors: {errors}")
 
     if rows:
