@@ -1,12 +1,6 @@
 # COM-480 Milestone 2: NegativeEV
 
-| Student | SCIPER |
-|---|---|
-| Anton Svet | 347212 |
-| Santiago Rivadeneira | 339832 |
-| Arthur Margeat | 330258 |
-
-*Individual contribution by Santiago Rivadeneira, to be merged with the drafts from Anton and Arthur into the final team document.*
+*Individual contribution by Santiago Rivadeneira, to be merged with the drafts from Anton and Arthur. Team and SCIPERs: see README.*
 
 ## 1. Project Goal
 
@@ -28,7 +22,7 @@ Four visual building blocks, each already implemented in the live prototype (§5
 
 **B. 3D Calibration Surface *(centrepiece)*.** Two superimposed surfaces (a flat 50/50 reference plane and the actual historical Up-rate) coloured by calibration error. Conceptually this is an **implied volatility surface** from options finance, swapping `(strike, expiry, IV)` for `(token price, time remaining, real P(Up))`. Users rotate, zoom, hover, and toggle each surface. Axes: time remaining (s) × BTC Δ (%) × P(Up). Arthur has already generated the offline surfaces (`docs/surface_overlay.html`, `surface_error.html`, `surface_implied.html`, `surface_realized.html`), confirming the grid is sound. *Why:* answers the core calibration question in a single rotatable image. *Live demo (from the prototype):*
 
-<p align="center"><img src="./docs/videos/surface_demo.gif" alt="3D calibration surface demo" width="42%"/></p>
+<p align="center"><img src="./docs/videos/surface_demo.gif" alt="3D calibration surface demo" width="55%"/></p>
 
 *Reference render:* `docs/images/price_surface.png`. *Tools:* **Plotly.js** via `react-plotly.js`; Python offline for the pre-computed grid. *Lectures (past):* **05_1 Interaction**, **05_2 More interactive D3**, **06_1 Perception & Colors** (diverging colormap). *Lectures (future):* **11_1 Tabular Data** (multivariate grid aggregation).
 
@@ -36,7 +30,7 @@ Four visual building blocks, each already implemented in the live prototype (§5
 
 **D. Markov transition diagram + streak chart.** Does an *Up* round make the next round more likely to be *Up*? We compute the four transition probabilities from the ordered sequence of 9,181 resolutions and render an interactive SVG with an animated *simulation* mode (hit "Simulate" and a 20-step random walk highlights each arrow as it fires). A bar chart shows the empirical streak-length distribution. *Why:* tests whether consecutive outcomes are truly independent or whether short streaks, persistence, or reversals hide in the data. *Live demo (from the prototype):*
 
-<p align="center"><img src="./docs/videos/markov_demo.gif" alt="Markov analysis demo" width="42%"/></p>
+<p align="center"><img src="./docs/videos/markov_demo.gif" alt="Markov analysis demo" width="55%"/></p>
 
 *Reference render:* `docs/images/markov.png`. *Tools:* hand-written SVG + React state; Recharts for the streak histogram. *Lectures (past):* **05_1 Interaction**. *Lectures (future):* **10 Graphs** (node-link diagrams).
 
