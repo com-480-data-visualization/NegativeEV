@@ -68,7 +68,7 @@ Five parallelizable tracks for M3: **(1)** data layer *(DONE)*, **(2)** 3D surfa
 
 A fully interactive skeleton is already deployed at:
 
-**→ https://preview--negativeev.lovable.app/**
+**→ https://negativeev.lovable.app/**
 
 **Methodology disclosure (AI-assisted tools).** The prototype was built in two distinct phases:
 
