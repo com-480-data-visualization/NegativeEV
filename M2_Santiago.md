@@ -1,4 +1,4 @@
-# COM-480 Milestone 2 — NegativeEV
+# COM-480 Milestone 2: NegativeEV
 
 | Student | SCIPER |
 |---|---|
@@ -6,7 +6,7 @@
 | Santiago Rivadeneira | 339832 |
 | Arthur Margeat | 330258 |
 
-*Individual contribution by Santiago Rivadeneira — to be merged with the drafts from Anton and Arthur into the final team document.*
+*Individual contribution by Santiago Rivadeneira, to be merged with the drafts from Anton and Arthur into the final team document.*
 
 ## 1. Project Goal
 
@@ -29,17 +29,17 @@ Our custom dataset joins **Polymarket's CLOB + Gamma APIs** with **Binance 1-sec
 | Total volume | **$686 M** |
 | Avg trades / market | **1,835** |
 | Up rate | **51.4 %** |
-| Date range | Feb 12 – Mar 15, 2026 |
+| Date range | Feb 12 to Mar 15, 2026 |
 
 Cleaning ~15 GB of raw JSON from three endpoints down to the ~6 MB of tabular data the frontend consumes required cross-endpoint deduplication, a temporal join against Binance at 1 s granularity, 2D binning over `(time_remaining, BTC_Δ%)` for the calibration grid, and pre-aggregation of hourly and Markov statistics. Stack: **pandas / numpy / pyarrow**, with **Cursor + Claude Code** assisting the iterative scripting (see §6).
 
-## 3. Visualizations — MVP
+## 3. Visualizations (MVP)
 
-Four visual building blocks, each already implemented in the live prototype (§6). Global layout: single-scroll flow *hero → 3D surface → 2D distributions → temporal heatmaps → Markov → closing*. The *Reference render* link under each block points to a PNG produced by our offline Python pipeline — not hand-drawn mockups, but the real exploratory output the final interactive version will mirror.
+Four visual building blocks, each already implemented in the live prototype (§6). Global layout: single-scroll flow *hero → 3D surface → 2D distributions → temporal heatmaps → Markov → closing*. The *Reference render* link under each block points to a PNG produced by our offline Python pipeline. These are not hand-drawn mockups, but the real exploratory output the final interactive version will mirror.
 
 **A. Hero / dataset overview.** Animated stat counters (markets, volume, Up rate, date range) anchoring the reader before any interactive viz. *Tools:* React + Tailwind. *Lectures (past):* **01_1 Intro**, **07_1 Designing Viz**, **07_2 Do & Don't Viz**.
 
-**B. 3D Calibration Surface *(centrepiece)*.** Two superimposed surfaces — a flat 50/50 reference plane and the actual historical Up-rate — coloured by calibration error. Users rotate, zoom, hover, and toggle each surface. Axes: time remaining (s) × BTC Δ (%) × P(Up). Arthur has already generated the offline surfaces (`docs/surface_overlay.html`, `surface_error.html`, `surface_implied.html`, `surface_realized.html`), confirming the grid is sound. *Live demo (from the prototype):*
+**B. 3D Calibration Surface *(centrepiece)*.** Two superimposed surfaces (a flat 50/50 reference plane and the actual historical Up-rate) coloured by calibration error. Users rotate, zoom, hover, and toggle each surface. Axes: time remaining (s) × BTC Δ (%) × P(Up). Arthur has already generated the offline surfaces (`docs/surface_overlay.html`, `surface_error.html`, `surface_implied.html`, `surface_realized.html`), confirming the grid is sound. *Live demo (from the prototype):*
 
 ![3D calibration surface demo](./docs/videos/surface_demo.gif)
 
@@ -55,14 +55,14 @@ Four visual building blocks, each already implemented in the live prototype (§6
 
 ## 4. Extra ideas *(droppable)*
 
-- **Live market replay** — an animated 3D line tracing a single real 5-minute round across the calibration surface.
-- **Trading playground** — $100 virtual capital, user tweaks two hyperparameters (entry threshold, bet size), site backtests against a 100-market sample and reports PnL.
-- **Interactive slicing** — lock one axis of the 3D surface to get exact 2D cross-sections; context filters (high-volatility days, weekends only, etc.).
-- **Scrollytelling** — text blocks triggering viz state changes on scroll. *Tools:* Framer Motion + React Scrollama. *Lecture (future):* **12_1 Storytelling**.
+- **Live market replay**: an animated 3D line tracing a single real 5-minute round across the calibration surface.
+- **Trading playground**: $100 virtual capital, user tweaks two hyperparameters (entry threshold, bet size), site backtests against a 100-market sample and reports PnL.
+- **Interactive slicing**: lock one axis of the 3D surface to get exact 2D cross-sections; context filters (high-volatility days, weekends only, etc.).
+- **Scrollytelling**: text blocks triggering viz state changes on scroll. *Tools:* Framer Motion + React Scrollama. *Lecture (future):* **12_1 Storytelling**.
 
 ## 5. Independent implementation tracks
 
-Five parallelizable tracks for M3: **(1)** data layer *(DONE)*, **(2)** 3D surface component, **(3)** 2D chart library, **(4)** Markov interactive + streak chart, **(5)** narrative shell. Track 1 is non-negotiable; 2–3 are core; 4–5 can be trimmed.
+Five parallelizable tracks for M3: **(1)** data layer *(DONE)*, **(2)** 3D surface component, **(3)** 2D chart library, **(4)** Markov interactive + streak chart, **(5)** narrative shell. Track 1 is non-negotiable; tracks 2 and 3 are core; tracks 4 and 5 can be trimmed.
 
 ## 6. Functional Prototype Review
 
@@ -72,8 +72,8 @@ A fully interactive skeleton is already deployed at:
 
 **Methodology disclosure (AI-assisted tools).** The prototype was built in two distinct phases:
 
-1. **Data cleaning (~15 GB → ~6 MB)** — Python ingestion / join / aggregation scripts developed iteratively with **Cursor + Claude Code** (deduplication, Binance 1 s alignment, grid binning). All code reviewed and run locally.
-2. **UI scaffolding** — the React + Tailwind + Plotly/Recharts frontend was bootstrapped with **Lovable** (AI web-app builder) as a *design-exploration* tool to lock the information architecture and visual identity before committing to a hand-written final version.
+1. **Data cleaning (~15 GB to ~6 MB)**: Python ingestion, join and aggregation scripts developed iteratively with **Cursor + Claude Code** (deduplication, Binance 1 s alignment, grid binning). All code was reviewed and run locally.
+2. **UI scaffolding**: the React + Tailwind + Plotly/Recharts frontend was bootstrapped with **Lovable** (AI web-app builder) as a *design-exploration* tool to lock the information architecture and visual identity before committing to a hand-written final version.
 
 **This prototype is explicitly not our final deliverable.** Its purpose is to (a) validate that the chosen stack can render every visualization we want, (b) lock the narrative architecture, and (c) show tangible progress on all four MVP visualizations.
 
