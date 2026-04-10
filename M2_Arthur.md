@@ -2,9 +2,9 @@
 
 ## Project Goal
 
-Our project, **NegativeEV**, aims to explore the "wisdom of crowds" at extremely short timescales. By leveraging a custom, high-frequency dataset combining Polymarket’s 5-minute Bitcoin prediction markets with Binance spot prices, our main objective is to visualize **market calibration**. Specifically, we want to visually answer a central question: *When a token trades at 70 cents (implying a 70% probability of an outcome), does that predicted event actually occur 70% of the time at such micro-durations?*
+Our project, **NegativeEV**, aims to explore the "wisdom of crowds" at extremely short timescales. By leveraging a custom, high-frequency dataset combining Polymarket's 5-minute Bitcoin prediction markets with Binance spot prices, our main objective is to visualize **market calibration**. Specifically, we want to visually answer a central question: *When a token trades at 70 cents (implying a 70% probability of an outcome), does that predicted event actually occur 70% of the time at such micro-durations?*
 
-To make this complex, high-frequency financial data accessible, our final product will be an interactive, scrollytelling-driven website. Users will be guided through foundational concepts—such as market volume, bid-ask spreads, and basic 2D calibration curves—before being introduced to our core visualization: a **3D interactive surface** that illustrates how market calibration evolves as a function of both time remaining and Bitcoin price momentum. 
+To make this complex, high-frequency financial data accessible, our final product will be an interactive, scrollytelling-driven website. Users will be guided through foundational concepts, such as market volume, bid-ask spreads, and basic 2D calibration curves, before being introduced to our core visualization: a **3D interactive surface** that illustrates how market calibration evolves as a function of both time remaining and Bitcoin price momentum. 
 
 This project targets researchers in market microstructure, data scientists benchmarking prediction models, and anyone interested in behavioral finance, offering an unprecedented visual tool to spot where the market systematically over- or under-estimates outcomes.
 
@@ -23,7 +23,7 @@ Before introducing the 3D surface, we need to establish baseline metrics. This i
 `[Insert Sketch 2: 2D Calibration Curve and Histogram UI]`
 
 ### 2. The Core 3D Calibration Surface
-This is the Minimal Viable Product (MVP) core of our project. It adapts the concept of an "implied volatility surface" from traditional finance. The visualization is an interactive 3D surface where the axes are: time remaining (0–300s), BTC price variation (%), and the calibration error (implied probability vs. realized outcome frequency). Users will be able to rotate, pan, and zoom to explore the data landscape.
+This is the Minimal Viable Product (MVP) core of our project. It adapts the concept of an "implied volatility surface" from traditional finance. The visualization is an interactive 3D surface where the axes are: time remaining (0-300s), BTC price variation (%), and the calibration error (implied probability vs. realized outcome frequency). Users will be able to rotate, pan, and zoom to explore the data landscape.
 * **Tools used:** **Plotly.js** (via `react-plotly.js`) for rendering the 3D mesh. Plotly is robust for scientific 3D data. Alternatively, we may use **React Three Fiber** (a React wrapper for Three.js) if we need deeper custom rendering capabilities. 
 * **Data Prep Tools:** **Python (Pandas, NumPy)** is used offline to clean the 16.8 million trades and pre-compute the multidimensional grid/matrices required for the surface.
 
@@ -48,4 +48,4 @@ If time permits, we plan to implement the following features to enhance engageme
 At this stage of the project, we have successfully validated the technical feasibility of both our web architecture and our data modeling:
 1. **Initial Web Prototype:** We have deployed a functional skeleton of our website, which is currently running at **[https://negativeev.lovable.app](https://negativeev.lovable.app)**. This prototype validates our Next.js/React structure, routing, and Tailwind layout, providing the exact placeholders where our interactive widgets will be injected.
 2. **Offline 3D Generation:** In parallel, we have written comprehensive Python scripts that successfully generate the 3D surface visualization from our raw API dataset. This confirms that our data is sound and mathematically forms a continuous, insightful surface. 
-3. **Next Steps:** The primary work for Milestone 3 consists of bridging these two achievements—exporting the Python-generated surface matrices into a lightweight format (JSON) and rendering them interactively via React libraries within our live Next.js prototype.
+3. **Next Steps:** The primary work for Milestone 3 consists of bridging these two achievements: exporting the Python-generated surface matrices into a lightweight format (JSON) and rendering them interactively via React libraries within our live Next.js prototype.
