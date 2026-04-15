@@ -34,9 +34,13 @@ We answer it visually, comparing **observed outcome frequencies** against **mark
 
 ### 2.1 Global scrollytelling layout
 
-The site is a single-scroll narrative. Each block snaps into view with a fade, and the 3D surface auto-rotates until the user interacts with it.
+The site is a single-scroll narrative. Blocks fade in as the user scrolls, and the 3D surface auto-rotates until the user interacts with it. Sections, top to bottom:
 
-<p align="center"><img src="./docs/images/site_layout.png" alt="Single-scroll layout of the NegativeEV website, five stacked sections" width="58%"/></p>
+1. **Hero** (entry point, not a visualization): animated dataset counters.
+2. **Block A** *(centrepiece, the MVP)*: 3D Calibration Surface.
+3. **Block B**: Distributions, temporal heatmaps, market-efficiency cluster.
+4. **Block C**: Markov transition diagram + streak histogram.
+5. **Closing**: repository, team, references.
 
 ### 2.2 Hero and dataset overview
 
