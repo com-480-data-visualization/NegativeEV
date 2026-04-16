@@ -52,6 +52,8 @@ A rotatable surface showing the empirical P(Up) as a function of *time remaining
 
 The surface answers the calibration question in a single image. It adapts the IV surface, substituting (strike, expiry, IV) with (BTC Δ, time remaining, empirical P(Up)).
 
+<p align="center"><img src="./docs/videos/calibrationSurfaceLow.gif" alt="3D calibration surface live demo" width="52%"/></p>
+
 *Encoding:* position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
 *Interactions:* drag rotates, scroll zooms, hover shows (time, Δ, P(Up), sample count), click slices a 2D cross-section, a toggle hides the reference plane.
@@ -62,15 +64,15 @@ The surface answers the calibration question in a single image. It adapts the IV
 
 ### Block B. Distributions, temporal heatmaps, market efficiency
 
+A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC Δ histogram stacked by outcome with a normal-fit overlay (to expose fat tails), hourly outcome bars, volume-vs-Δ scatter (log Y), daily volume area chart, trades-per-market bars, and two day-of-week × hour heatmaps for volume and Up-rate.
+
+Where Block A asked *is the market calibrated?*, Block B asks *when, and under what conditions?*. It isolates the temporal and volume regimes that drive the deviations, and gives the reader a ground-truth view of the marginals before Block C moves from probabilities to sequences.
+
 ![Price Change Distribution](docs/images/price_change_distribution.png)
 
 ![Volume Heatmap](docs/images/heatmap.png)
 
 ![Winrate Heatmap](docs/images/winrate_heatmap.png)
-
-A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC Δ histogram stacked by outcome with a normal-fit overlay (to expose fat tails), hourly outcome bars, volume-vs-Δ scatter (log Y), daily volume area chart, trades-per-market bars, and two day-of-week × hour heatmaps for volume and Up-rate.
-
-Where Block A asked *is the market calibrated?*, Block B asks *when, and under what conditions?*. It isolates the temporal and volume regimes that drive the deviations, and gives the reader a ground-truth view of the marginals before Block C moves from probabilities to sequences.
 
 *Encoding:* position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
 
