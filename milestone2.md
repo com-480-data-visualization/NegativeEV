@@ -68,11 +68,11 @@ A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC 
 
 Where Block A asked *is the market calibrated?*, Block B asks *when, and under what conditions?*. It isolates the temporal and volume regimes that drive the deviations, and gives the reader a ground-truth view of the marginals before Block C moves from probabilities to sequences.
 
-![Price Change Distribution](docs/images/price_change_distribution.png)
+<p align="center"><img src="./docs/images/price_change_distribution.png" alt="Price Change Distribution" width="70%"/></p>
 
-![Volume Heatmap](docs/images/heatmap.png)
+<p align="center"><img src="./docs/images/heatmap.png" alt="Volume Heatmap" width="70%"/></p>
 
-![Winrate Heatmap](docs/images/winrate_heatmap.png)
+<p align="center"><img src="./docs/images/winrate_heatmap.png" alt="Winrate Heatmap" width="70%"/></p>
 
 *Encoding:* position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
 
