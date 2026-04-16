@@ -6,7 +6,7 @@
 | Santiago Rivadeneira | 339832 |
 | Arthur Margeat | 330258 |
 
-[Milestone 1](#milestone-1) • [Milestone 2](#Milestone2.md) • [Milestone 3](#milestone-3)
+[Milestone 1](#milestone-1) • [Milestone 2](Milestone2.md) • [Milestone 3](#milestone-3)
 
 ## Milestone 1 (20th March, 5pm)
 
