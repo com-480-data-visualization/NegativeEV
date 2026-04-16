@@ -76,7 +76,7 @@ We built a custom dataset by querying Polymarket's API and matching trades with 
 
 ## Milestone 2 (17th April, 5pm)
 
-**10% of the final grade**
+> See Milestone2.md
 
 
 ## Milestone 3 (29th May, 5pm)
