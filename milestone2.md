@@ -62,6 +62,12 @@ The surface answers the calibration question in a single image. It adapts the IV
 
 ### Block B. Distributions, temporal heatmaps, market efficiency
 
+![Price Change Distribution](docs/images/price_change_distribution.png)
+
+![Volume Heatmap](docs/images/heatmap.png)
+
+![Winrate Heatmap](docs/images/winrate_heatmap.png)
+
 A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC Δ histogram stacked by outcome with a normal-fit overlay (to expose fat tails), hourly outcome bars, volume-vs-Δ scatter (log Y), daily volume area chart, trades-per-market bars, and two day-of-week × hour heatmaps for volume and Up-rate.
 
 Where Block A asked *is the market calibrated?*, Block B asks *when, and under what conditions?*. It isolates the temporal and volume regimes that drive the deviations, and gives the reader a ground-truth view of the marginals before Block C moves from probabilities to sequences.
