@@ -140,12 +140,12 @@ Tracks 2 and 3 are the non-negotiable core. Tracks 1 and 5 have no cross-depende
 
 A fully interactive skeleton is deployed at https://negativeev.lovable.app/.
 
-*Methodology disclosure (AI-assisted tools).* The data-cleaning pipeline (~15 GB raw JSON to ~6 MB tabular) was developed with Cursor + Claude Code, all code reviewed and run locally. The React + Tailwind + Plotly/Recharts frontend was bootstrapped with Lovable as a design-exploration tool. This let us lock information architecture and visual identity before the hand-authored rewrite planned for M3.
+***Methodology disclosure (AI-assisted tools).*** The data-cleaning pipeline (~15 GB raw JSON to ~6 MB tabular) was developed with Cursor + Claude Code, all code reviewed and run locally. The React + Tailwind + Plotly/Recharts frontend was bootstrapped with Lovable as a design-exploration tool. This let us lock information architecture and visual identity before the hand-authored rewrite planned for M3.
 
-*What already works.* All four MVP blocks are live: animated hero counters; auto-rotating 3D calibration surface (pauses on interaction); 2D distribution and heatmap cluster; Markov diagram with animated 20-step simulation and streak histogram.
+***What already works.*** All four MVP blocks are live: animated hero counters; auto-rotating 3D calibration surface (pauses on interaction); 2D distribution and heatmap cluster; Markov diagram with animated 20-step simulation and streak histogram.
 
 Dark theme, scroll-linked navbar, fade-in section animations and responsive breakpoints are in place.
 
-*Known limitations (addressed in M3).* The prototype runs on Vite + React (not Next.js) and renders as a pure SPA. Scrollytelling is not yet wired (only scroll-triggered fade-ins). Markov simulation state does not persist in the URL, and the accessibility pass is still pending.
+***Known limitations (addressed in M3).*** The prototype runs on Vite + React (not Next.js) and renders as a pure SPA. Scrollytelling is not yet wired (only scroll-triggered fade-ins). Markov simulation state does not persist in the URL, and the accessibility pass is still pending.
 
 For M3 we migrate to a hand-authored Next.js repo (reusing the pre-computed data and validated component structure), wire proper scrollytelling via Framer Motion + React Scrollama, integrate the offline surface variants (`docs/surface_*.html`), and ship at least one extra.
