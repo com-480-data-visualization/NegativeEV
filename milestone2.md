@@ -92,6 +92,7 @@ This tests whether consecutive outcomes are truly independent, or whether short 
 <br><br>
 <p align="center"><img src="./docs/videos/markov_demo.gif" alt="Markov simulation live demo" width="70%"/></p>
 <br><br>
+
 ***Encoding:*** node size = marginal frequency, edge width = transition probability (redundant with the numeric label), highlight color during simulation. Streak chart: grouped bars, one color per direction.
 
 ***Interactions:*** hover on an edge dims the others, hover on the simulated sequence highlights the traversed edge, speed slider (100 to 1000 ms/step).
