@@ -18,7 +18,7 @@ The project name, *NegativeEV*, is a nod to the trading term *negative expected 
 
 We ask one focused question:
 
-> When the market implies a 70 % probability of Up, does Up actually occur 70 % of the time?
+> When the market implies a X % probability of Up, does Up actually occur X % of the time?
 
 We answer it visually. We compare observed outcome frequencies against market-implied probabilities along the two dimensions that should drive them: time remaining inside the 5-minute round, and BTC price momentum since round open.
 
