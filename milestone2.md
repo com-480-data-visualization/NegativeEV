@@ -52,7 +52,7 @@ A rotatable surface showing the empirical P(Up) as a function of *time remaining
 
 The surface answers the calibration question in a single image. It adapts the IV surface, substituting (strike, expiry, IV) with (BTC Δ, time remaining, empirical P(Up)).
 
-<p align="center"><img src="./docs/videos/calibrationSurface.gif" alt="3D calibration surface live demo" width="52%"/></p>
+<p align="center"><img src="./docs/videos/calibrationSurface.gif" alt="3D calibration surface live demo" width="70%"/></p>
 
 *Encoding:* position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
@@ -89,6 +89,8 @@ A hand-coded interactive SVG with two state circles (Up, Down) and four directed
 A *Simulate* button fires a 20-step random walk, highlighting each traversed edge. A companion bar chart shows the streak-length distribution.
 
 This tests whether consecutive outcomes are truly independent, or whether short streaks, persistence or reversals hide in the data.
+
+<p align="center"><img src="./docs/videos/markov_demo.gif" alt="Markov simulation live demo" width="70%"/></p>
 
 *Encoding:* node size = marginal frequency, edge width = transition probability (redundant with the numeric label), highlight color during simulation. Streak chart: grouped bars, one color per direction.
 
