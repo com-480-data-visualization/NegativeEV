@@ -1,4 +1,4 @@
-<img width="1401" height="1083" alt="image" src="https://github.com/user-attachments/assets/af8b0601-dda9-426a-989b-8a4b775f139b" /># NegativeEV
+# NegativeEV
 **Are Polymarket's 5-minute Bitcoin markets actually well-calibrated?**
 
 COM-480 Data Visualization · EPFL Spring 2026 · Milestone 2
@@ -8,7 +8,7 @@ Anton Svet (347212) · Santiago Rivadeneira (339832) · Arthur Margeat (330258)
 Prototype: https://negativeev.lovable.app/
 Repository: https://github.com/com-480-data-visualization/NegativeEV
 <br><br>
-<p align="center"><img src="./docs/videos/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="70%"/></p>
+<p align="center"><img src="./docs/videos/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="50%"/></p>
 <br><br>
 ## 1. Project goal
 
