@@ -51,9 +51,9 @@ Text marks only; typographic weight and the entrance animation carry the signal.
 A rotatable surface showing the empirical P(Up) as a function of *time remaining* and *BTC Δ since open*. It is plotted against a semi-transparent 50 % reference plane (40 % alpha) for readable overlap.
 
 The surface answers the calibration question in a single image. It adapts the IV surface, substituting (strike, expiry, IV) with (BTC Δ, time remaining, empirical P(Up)).
-
+<br><br>
 <p align="center"><img src="./docs/videos/calibrationSurface.gif" alt="3D calibration surface live demo" width="70%"/></p>
-
+<br><br>
 *Encoding:* position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
 *Interactions:* drag rotates, scroll zooms, hover shows (time, Δ, P(Up), sample count), click slices a 2D cross-section, a toggle hides the reference plane.
@@ -68,12 +68,13 @@ A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC 
 
 Where Block A asked *is the market calibrated?*, Block B asks *when, and under what conditions?*. It isolates the temporal and volume regimes that drive the deviations, and gives the reader a ground-truth view of the marginals before Block C moves from probabilities to sequences.
 
+<br><br>
 <p align="center"><img src="./docs/images/price_change_distribution.png" alt="Price Change Distribution" width="70%"/></p>
-
+<br><br>
 <p align="center"><img src="./docs/images/heatmap.png" alt="Volume Heatmap" width="70%"/></p>
-
+<br><br>
 <p align="center"><img src="./docs/images/winrate_heatmap.png" alt="Winrate Heatmap" width="70%"/></p>
-
+<br><br>
 *Encoding:* position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
 
 *Interactions:* hover for tick-level detail, click on a bar filters the scatter, heatmap cells expand on click.
@@ -89,9 +90,9 @@ A hand-coded interactive SVG with two state circles (Up, Down) and four directed
 A *Simulate* button fires a 20-step random walk, highlighting each traversed edge. A companion bar chart shows the streak-length distribution.
 
 This tests whether consecutive outcomes are truly independent, or whether short streaks, persistence or reversals hide in the data.
-
+<br><br>
 <p align="center"><img src="./docs/videos/markov_demo.gif" alt="Markov simulation live demo" width="70%"/></p>
-
+<br><br>
 *Encoding:* node size = marginal frequency, edge width = transition probability (redundant with the numeric label), highlight color during simulation. Streak chart: grouped bars, one color per direction.
 
 *Interactions:* hover on an edge dims the others, hover on the simulated sequence highlights the traversed edge, speed slider (100 to 1000 ms/step).
