@@ -74,7 +74,8 @@ Where Block A asked *is the market calibrated?*, Block B asks *when, and under w
 <br><br>
 <p align="center"><img src="./docs/images/winrate_heatmap.png" alt="Winrate Heatmap" width="70%"/></p>
 <br><br>
-*Encoding:* position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
+
+***Encoding:*** position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
 
 ***Interactions:*** hover for tick-level detail, click on a bar filters the scatter, heatmap cells expand on click.
 
