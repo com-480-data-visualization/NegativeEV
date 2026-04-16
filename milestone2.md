@@ -7,9 +7,11 @@ Anton Svet (347212) · Santiago Rivadeneira (339832) · Arthur Margeat (330258)
 
 Prototype: https://negativeev.lovable.app/
 Repository: https://github.com/com-480-data-visualization/NegativeEV
+
 <br><br>
-<p align="center"><img src="./docs/videos/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="50%"/></p>
+<p align="center"><img src="./docs/images/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="50%"/></p>
 <br><br>
+
 ## 1. Project goal
 
 In late 2025 Polymarket launched `btc-updown-5m`, a family of prediction markets where a new round opens every five minutes. Traders bet whether BTC will finish *Up* or *Down* relative to the opening price.
