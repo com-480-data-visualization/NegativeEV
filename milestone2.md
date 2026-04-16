@@ -10,7 +10,7 @@ In late 2025 Polymarket launched `btc-updown-5m`, a family of prediction markets
 
 We ask one focused question:
 
-> When the market implies a 70 % probability of Up, does Up actually occur 70 % of the time?
+> When for example the market implies a 70 % probability of Up, does Up actually occur 70 % of the time?
 
 We answer it visually, comparing observed outcome frequencies against market-implied probabilities along the two dimensions that should drive them: time remaining inside the 5-minute round, and BTC price momentum since round open.
 
