@@ -36,17 +36,15 @@ The site is a single-scroll narrative. Blocks fade in on scroll, and the 3D surf
 
 Reference sketches and renders: `docs/images/price_surface.png`, `last_trade_price_outcome.png`, `market_calibration.png`, `markov.png`.
 
-### Hero
+### Hero:
 
-Four animated counters (9,181 markets, $686 M, 51.4 % Up, 32 days) rise from zero over two seconds on scroll-in. This anchors dataset scale before any interactive element competes for attention.
+Four animated counters (9,181 markets, $686 M, 51.4 % Up, 32 days) rise from zero over two seconds on scroll-in. This anchors dataset scale before any interactive element competes for attention. Text marks only; typographic weight and the entrance animation carry the signal.
 
-Text marks only; typographic weight and the entrance animation carry the signal.
+**Tools:** React 19 + Tailwind, custom `useAnimatedCounter` hook on `requestAnimationFrame`.
 
-*Tools:* React 19 + Tailwind, custom `useAnimatedCounter` hook on `requestAnimationFrame`.
+**Lectures:** 01_1 Intro to Data Viz; 07_1 / 07_2 Designing Viz and Do & Don't (progressive disclosure).
 
-*Lectures:* 01_1 Intro to Data Viz; 07_1 / 07_2 Designing Viz and Do & Don't (progressive disclosure).
-
-### Block A. 3D Calibration Surface (MVP)
+### Block A: 3D Calibration Surface (MVP)
 
 A rotatable surface showing the empirical P(Up) as a function of *time remaining* and *BTC Δ since open*. It is plotted against a semi-transparent 50 % reference plane (40 % alpha) for readable overlap.
 
@@ -54,15 +52,16 @@ The surface answers the calibration question in a single image. It adapts the IV
 <br><br>
 <p align="center"><img src="./docs/videos/calibrationSurfaceNew.gif" alt="3D calibration surface live demo" width="70%"/></p>
 <br><br>
-*Encoding:* position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
-*Interactions:* drag rotates, scroll zooms, hover shows (time, Δ, P(Up), sample count), click slices a 2D cross-section, a toggle hides the reference plane.
+**Encoding:** position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
-*Tools:* Plotly.js via `react-plotly.js`; a Python offline pipeline (pandas, numpy, pyarrow/Parquet) pre-computes a 30 × 20 grid shipped as a 7 KB JSON. *Rejected:* Three.js / R3F (would force custom shaders, axes and colorbars); raw D3 (no 3D scenegraph).
+**Interactions:** drag rotates, scroll zooms, hover shows (time, Δ, P(Up), sample count), click slices a 2D cross-section, a toggle hides the reference plane.
 
-*Lectures:* 05_1 / 05_2 Interaction; 06_1 Perception & Colors (diverging palette on error); 06_2 Mark & Channel (position-dominated encoding); 11_1 Tabular Data (future, for grid-aggregation refinement).
+**Tools:** Plotly.js via `react-plotly.js`; a Python offline pipeline (pandas, numpy, pyarrow/Parquet) pre-computes a 30 × 20 grid shipped as a 7 KB JSON. *Rejected:* Three.js / R3F (would force custom shaders, axes and colorbars); raw D3 (no 3D scenegraph).
 
-### Block B. Distributions, temporal heatmaps, market efficiency
+**Lectures:** 05_1 / 05_2 Interaction; 06_1 Perception & Colors (diverging palette on error); 06_2 Mark & Channel (position-dominated encoding); 11_1 Tabular Data (future, for grid-aggregation refinement).
+
+### Block B: Distributions, temporal heatmaps, market efficiency
 
 A 2D cluster that unpacks the patterns the 3D surface surfaced at a glance: BTC Δ histogram stacked by outcome with a normal-fit overlay (to expose fat tails), hourly outcome bars, volume-vs-Δ scatter (log Y), daily volume area chart, trades-per-market bars, and two day-of-week × hour heatmaps for volume and Up-rate.
 
@@ -77,13 +76,13 @@ Where Block A asked *is the market calibrated?*, Block B asks *when, and under w
 <br><br>
 *Encoding:* position (x-axis) for binned quantitative dimensions, length for counts, ordered hue for Up/Down. Heatmaps use sequential viridis for volume and the same diverging RdYlGn as Block A for Up-rate, preserving cross-section consistency.
 
-*Interactions:* hover for tick-level detail, click on a bar filters the scatter, heatmap cells expand on click.
+**Interactions:** hover for tick-level detail, click on a bar filters the scatter, heatmap cells expand on click.
 
-*Tools:* Recharts for bars / scatter / histograms / area; custom SVG for heatmaps (pixel-perfect axis labels). *Rejected:* Visx (more boilerplate at this scale); raw D3 (too low-level).
+**Tools:** Recharts for bars / scatter / histograms / area; custom SVG for heatmaps (pixel-perfect axis labels). *Rejected:* Visx (more boilerplate at this scale); raw D3 (too low-level).
 
-*Lectures:* 04_1 Data (binning decisions); 06_1 / 06_2 Perception and Mark & Channel; 11_1 Tabular Data (future).
+**Lectures:** 04_1 Data (binning decisions); 06_1 / 06_2 Perception and Mark & Channel; 11_1 Tabular Data (future).
 
-### Block C. Markov transition diagram + streak histogram
+### Block C: Markov transition diagram + streak histogram
 
 A hand-coded interactive SVG with two state circles (Up, Down) and four directed edges carrying empirical transition probabilities computed from the ordered sequence of 9,181 resolutions.
 
@@ -95,11 +94,11 @@ This tests whether consecutive outcomes are truly independent, or whether short 
 <br><br>
 *Encoding:* node size = marginal frequency, edge width = transition probability (redundant with the numeric label), highlight color during simulation. Streak chart: grouped bars, one color per direction.
 
-*Interactions:* hover on an edge dims the others, hover on the simulated sequence highlights the traversed edge, speed slider (100 to 1000 ms/step).
+**Interactions:** hover on an edge dims the others, hover on the simulated sequence highlights the traversed edge, speed slider (100 to 1000 ms/step).
 
-*Tools:* hand-coded SVG + React state; Recharts for the streak histogram. *Rejected:* D3 force-layout (fixed 2-state topology doesn't benefit from force simulation).
+**Tools:** hand-coded SVG + React state; Recharts for the streak histogram. *Rejected:* D3 force-layout (fixed 2-state topology doesn't benefit from force simulation).
 
-*Lectures:* 05_1 Interaction; 10 Graphs (future, vocabulary on node-link diagrams).
+**Lectures:** 05_1 Interaction; 10 Graphs (future, vocabulary on node-link diagrams).
 
 ## 3. Design decisions and tool stack
 
