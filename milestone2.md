@@ -1,4 +1,4 @@
-# NegativeEV
+<img width="1401" height="1083" alt="image" src="https://github.com/user-attachments/assets/af8b0601-dda9-426a-989b-8a4b775f139b" /># NegativeEV
 **Are Polymarket's 5-minute Bitcoin markets actually well-calibrated?**
 
 COM-480 Data Visualization · EPFL Spring 2026 · Milestone 2
@@ -7,7 +7,9 @@ Anton Svet (347212) · Santiago Rivadeneira (339832) · Arthur Margeat (330258)
 
 Prototype: https://negativeev.lovable.app/
 Repository: https://github.com/com-480-data-visualization/NegativeEV
-
+<br><br>
+<p align="center"><img src="./docs/videos/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="70%"/></p>
+<br><br>
 ## 1. Project goal
 
 In late 2025 Polymarket launched `btc-updown-5m`, a family of prediction markets where a new round opens every five minutes. Traders bet whether BTC will finish *Up* or *Down* relative to the opening price.
@@ -33,8 +35,6 @@ One scrollytelling page with stepped reveal serves all three, rather than three 
 ## 2. Visualizations and sketches
 
 The site is a single-scroll narrative. Blocks fade in on scroll, and the 3D surface auto-rotates until the user interacts.
-
-Reference sketches and renders: `docs/images/price_surface.png`, `last_trade_price_outcome.png`, `market_calibration.png`, `markov.png`.
 
 ### Hero:
 
