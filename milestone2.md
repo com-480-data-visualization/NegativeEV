@@ -8,9 +8,8 @@ Anton Svet (347212) · Santiago Rivadeneira (339832) · Arthur Margeat (330258)
 Prototype: https://negativeev.lovable.app/
 Repository: https://github.com/com-480-data-visualization/NegativeEV
 
-<br><br>
-<p align="center"><img src="./docs/images/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="50%"/></p>
-<br><br>
+<p align="center"><img src="./docs/images/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="70%"/></p>
+
 
 ## 1. Project goal
 
