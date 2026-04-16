@@ -8,8 +8,6 @@ Anton Svet (347212) · Santiago Rivadeneira (339832) · Arthur Margeat (330258)
 Prototype: https://negativeev.lovable.app/
 Repository: https://github.com/com-480-data-visualization/NegativeEV
 
-<p align="center"><img src="./docs/images/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="70%"/></p>
-
 
 ## 1. Project goal
 
@@ -52,6 +50,8 @@ A rotatable surface showing the empirical P(Up) as a function of *time remaining
 The surface answers the calibration question in a single image. It adapts the IV surface, substituting (strike, expiry, IV) with (BTC Δ, time remaining, empirical P(Up)).
 <br><br>
 <p align="center"><img src="./docs/videos/calibrationSurfaceNew.gif" alt="3D calibration surface live demo" width="70%"/></p>
+<br>
+<p align="center"><img src="./docs/images/CalibrationErrorSurface.png" alt="3D calibration surface live demo" width="70%"/></p>
 <br><br>
 
 ***Encoding:*** position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
