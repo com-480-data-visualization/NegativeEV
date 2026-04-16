@@ -52,7 +52,7 @@ A rotatable surface showing the empirical P(Up) as a function of *time remaining
 
 The surface answers the calibration question in a single image. It adapts the IV surface, substituting (strike, expiry, IV) with (BTC Δ, time remaining, empirical P(Up)).
 
-<p align="center"><img src="./docs/videos/calibrationSurfaceLow.gif" alt="3D calibration surface live demo" width="52%"/></p>
+<p align="center"><img src="./docs/videos/calibrationSurface.gif" alt="3D calibration surface live demo" width="52%"/></p>
 
 *Encoding:* position on the three axes for the three variables; color on a diverging RdYlGn palette encodes *calibration error* (empirical minus 0.5), not probability itself. A diverging palette on probability would wrongly imply that 1 is "good" and 0 is "bad", while both outcomes are equally informative.
 
