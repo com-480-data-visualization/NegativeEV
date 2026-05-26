@@ -24,6 +24,10 @@ data/raw/
 Thumbs.db
 desktop.ini
 
+# Node / frontend
+website/node_modules/
+website/dist/
+
 # IDE
 .vscode/
 .idea/
