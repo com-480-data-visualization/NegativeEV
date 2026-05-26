@@ -17,12 +17,16 @@ env/
 # Large data files
 *.json
 !data/processed/*.csv
+!website/public/**/*.json
 data/raw/
 
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Generated plot files (old Plotly outputs — superseded by ECharts)
+docs/surface_*.html
 
 # Node / frontend
 website/node_modules/

@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --color-surface: #0f1117;
+  --color-surface-elevated: #161922;
+  --color-border: #2a2f3d;
+  --color-muted: #9ca3af;
+  --color-accent: #c084fc;
+}
+
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply m-0 min-h-svh bg-surface font-sans text-gray-100;
+}
+
+/* Dividers between stat-grid children */
+.stat-grid > * + * {
+  border-left: 1px solid var(--color-border);
+}
+@media (max-width: 639px) {
+  .stat-grid > *:nth-child(2n+1) {
+    border-left: none;
+  }
+  .stat-grid > *:nth-child(n+3) {
+    border-top: 1px solid var(--color-border);
+  }
+}
