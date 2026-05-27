@@ -55,9 +55,27 @@ The three modes are:
 - **Implied**: average implied P(UP) quoted by the market, same matching set
 - **Gap**: realized − implied (positive = market under-prices UP)
 
-Gaussian smoothing (`sigma-y`, `sigma-t`) is applied to numerator and denominator
-separately before dividing. This fills sparse tails (extreme BTC moves that occur
-rarely) without distorting interior probabilities.
+Only T-direction smoothing (`sigma-t`) is applied. Sparse cells that remain below
+`min_denom=5` effective observations after smoothing are filled by nearest-neighbour
+propagation along the Y axis (forward then backward pass), so the surface has no
+holes or sudden collapses at early T / extreme Y.
+
+**Verified spot-check values (raw, no smoothing):**
+
+| Condition | T remaining | n | P(UP) |
+|---|---|---|---|
+| BTC Δ ≥ +0.05% | 5 s | 2,914 | 98.9% |
+| BTC Δ ≥ +0.10% | 5 s | 1,817 | 99.9% |
+| BTC Δ ≥ +0.20% | 5 s | 709 | 100% |
+| BTC Δ ≤ −0.05% | 5 s | 2,850 | 2.2% |
+| BTC Δ ≤ −0.10% | 5 s | 1,825 | 0.9% |
+| BTC Δ ≥ +0.05% | 50 s | 2,870 | 93.4% |
+| BTC Δ ≥ +0.05% | 150 s | 2,485 | 82.9% |
+| BTC Δ ≥ +0.05% | 295 s | 321 | 64.5% |
+
+**Known discontinuity at Y=0:** the formula switches from left-tail (Y<0) to
+right-tail (Y≥0), so the matching count jumps at that boundary (~370 markets at
+T=5s are in the [-0.01%, 0%) gap). This is mathematically correct.
 
 **Rendering notes (important for smooth output):**
 
@@ -68,25 +86,30 @@ rarely) without distorting interior probabilities.
   295 s on the left (market start) → 5 s on the right (market end).
 - Shading must be `'color'`. `'lambert'` produces artifacts on steep gradients.
 
-**Standard command (smooth output):**
+**Standard command:**
 
 ```bash
 python scripts/build_cumulative_surface_html.py \
-  --sigma-y 5.0 \
-  --sigma-t 2.0
+  --sigma-y 0 \
+  --sigma-t 3.0
 ```
+
+sigma_y must be 0: Y-direction smoothing crosses the Y=0 boundary and mixes
+incompatible left-tail / right-tail counts, which dilutes probabilities near Y=0
+(e.g. pulling P(UP | BTC Δ ≥ +0.05%, T=5s) from 98.9% down to ~80%).
+The directional tail counts are naturally monotone in Y — no Y smoothing needed.
 
 **Variants:**
 
 ```bash
-# No smoothing (raw grid — noisy tails)
+# Completely raw (no smoothing at all — noisy in time direction)
 python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 0
 
 # Finer time resolution (slower, larger HTML)
-python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0 --time-step 3
+python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 3.0 --time-step 3
 
 # Skip first N markets (oldest data may be anomalous)
-python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0 --skip-first 500
+python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 3.0 --skip-first 500
 ```
 
 **Output:** `docs/up_cumulative_echarts3d.html` (~3 MB standalone HTML)
@@ -154,7 +177,7 @@ loads `docs/up_cumulative_echarts3d.html` directly without copying files.
 
 ```bash
 # From repo root, with venv active:
-python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0
+python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 3.0
 python scripts/build_analysis_data.py
 python scripts/export_playground_events.py
 ```

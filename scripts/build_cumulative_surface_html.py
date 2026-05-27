@@ -74,10 +74,11 @@ Y_MIN, Y_MAX = -0.50, 0.40          # percent units, not decimals
 BUCKET_WIDTH_DEFAULT = 0.01          # percentage points; -0.50..+0.40 gives 91 thresholds
 TIME_STEP_DEFAULT = 5                # displayed time_remaining spacing in seconds
 
-# sigma_y fills sparse extreme buckets so the surface reaches 0 and 1 at the tails.
-# sigma_t reduces per-time-step noise.  Use 0 for completely raw surfaces.
-SIGMA_Y = 5.0
-SIGMA_T = 2.0
+# sigma_y=0: the directional tail formula is naturally monotone in Y — smoothing in Y
+# crosses the Y=0 boundary and mixes incompatible left-tail / right-tail counts.
+# sigma_t smooths across adjacent time steps to reduce per-step noise.
+SIGMA_Y = 0.0
+SIGMA_T = 3.0
 
 BG = "#0f172a"
 
@@ -417,17 +418,14 @@ def smooth_and_divide(
     sigma_y: float,
     sigma_t: float,
     min_denom: float = 0.5,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Robustly smooth a conditional probability surface from sparse count data.
+    Smooth numerator and denominator independently, then divide.
 
-    Instead of smoothing the ratio (which amplifies noise in sparse buckets),
-    smooth numerator and denominator independently with a Gaussian kernel,
-    then divide.  This is equivalent to kernel density estimation and gives
-    stable probabilities even where individual buckets have < 5 markets.
+    Returns (smoothed_num, smoothed_den, ratio) so callers can expose the
+    smoothed counts in tooltips, keeping them consistent with the probability.
 
-    Cells where the smoothed denominator is below `min_denom` are set to NaN
-    (treated as no data rather than a noisy estimate).
+    Cells where smoothed denominator < min_denom are set to NaN.
     """
     num = np.nan_to_num(numerator.astype(float), nan=0.0)
     den = np.nan_to_num(denominator.astype(float), nan=0.0)
@@ -438,9 +436,43 @@ def smooth_and_divide(
         den = gaussian_filter(den, sigma=sigma, mode="nearest")
 
     with np.errstate(invalid="ignore", divide="ignore"):
-        result = np.where(den >= min_denom, num / den, np.nan)
+        ratio = np.where(den >= min_denom, num / den, np.nan)
 
-    return np.clip(result, 0.0, 1.0)
+    return num, den, np.clip(ratio, 0.0, 1.0)
+
+
+def fill_along_y(arr: np.ndarray) -> np.ndarray:
+    """
+    Fill NaN cells by nearest-neighbour propagation along the Y axis.
+
+    Forward pass (low Y → high Y): fills sparse extreme-positive-Y cells
+    by carrying the last valid value rightward.
+    Backward pass (high Y → low Y): fills sparse extreme-negative-Y cells
+    by carrying the first valid value leftward.
+
+    This keeps the surface visually continuous without blending values across
+    the Y=0 directional boundary.
+    """
+    result = arr.copy()
+    n_y, n_t = result.shape
+    for ti in range(n_t):
+        # Forward fill
+        last = np.nan
+        for yi in range(n_y):
+            v = result[yi, ti]
+            if np.isfinite(v):
+                last = v
+            elif np.isfinite(last):
+                result[yi, ti] = last
+        # Backward fill
+        last = np.nan
+        for yi in range(n_y - 1, -1, -1):
+            v = result[yi, ti]
+            if np.isfinite(v):
+                last = v
+            elif np.isfinite(last):
+                result[yi, ti] = last
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -490,9 +522,9 @@ def matrix_to_surface_points(
                     round_float(float(z_r)  if np.isfinite(z_r)  else float("nan"), 6),
                     round_float(float(z_i)  if np.isfinite(z_i)  else float("nan"), 6),
                     round_float(float(z_g)  if np.isfinite(z_g)  else float("nan"), 6),
-                    int(round(float(Z_up_count[yi, ti]))),
-                    int(round(float(Z_all_count[yi, ti]))),
-                    int(round(float(Z_impl_count[yi, ti]))),
+                    round_float(float(Z_up_count[yi, ti]),  1),
+                    round_float(float(Z_all_count[yi, ti]), 1),
+                    round_float(float(Z_impl_count[yi, ti]), 1),
                 ]
             )
     return out
@@ -760,14 +792,18 @@ def build_html(payload: dict) -> str:
         ? `BTC \u0394 \u2265 ${{yFmt}}`
         : `BTC \u0394 \u2264 ${{yFmt}}`;
 
+      // Smoothed counts: UP / total = displayed probability (consistent)
+      const matchTotal = Math.round(matchAll);
+      const matchUP    = Math.round(matchUp);
+
       return `
         <div style="min-width:320px;line-height:1.7;font-size:12px">
           <div style="font-weight:700;margin-bottom:4px">P(UP | condition met at time T)</div>
           <div>Time remaining: <b>${{time}} s</b></div>
           <div>Condition: <b>${{condition}}</b></div>
           <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
-          <div>Matching markets: <b>${{fmtInt(matchAll)}}</b></div>
-          <div>UP outcomes: <b>${{fmtInt(matchUp)}}</b></div>
+          <div>Effective count: <b>${{fmtInt(matchTotal)}}</b></div>
+          <div>UP outcomes: <b>${{fmtInt(matchUP)}}</b></div>
           <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
           <div>Realized P(UP): ${{r ? bold(realFmt) : realFmt}}</div>
           <div>Implied P(UP): ${{i ? bold(implFmt) : implFmt}}</div>
@@ -814,7 +850,7 @@ def build_html(payload: dict) -> str:
         }},
         xAxis3D: {{
           type: 'value',
-          name: 'Time elapsed (s)',
+          name: 'Time remaining (s)',
           min: PAYLOAD.meta.timeMin,
           max: PAYLOAD.meta.timeMax,
           inverse: true,
@@ -1049,16 +1085,25 @@ def main() -> None:
     # Smooth numerator and denominator independently before dividing.
     # sigma_y fills sparse extreme buckets (preventing collapse at ±0.40% edges).
     # sigma_t reduces per-time-step noise.
+    # Returns (smoothed_num, smoothed_den, ratio) so tooltip counts match probabilities.
     print("Smoothing and computing conditional probabilities ...", flush=True)
-    Z_real_s = smooth_and_divide(Z_up,   Z_all,  args.sigma_y, args.sigma_t)
-    Z_impl_s = smooth_and_divide(Z_isum, Z_icnt, args.sigma_y, args.sigma_t)
+    Z_up_s,   Z_all_s,  Z_real_s = smooth_and_divide(Z_up,   Z_all,  args.sigma_y, args.sigma_t, min_denom=5)
+    Z_isum_s, Z_icnt_s, Z_impl_s = smooth_and_divide(Z_isum, Z_icnt, args.sigma_y, args.sigma_t, min_denom=5)
+
+    # Fill remaining NaN cells (sparse early-T / extreme-Y) by nearest-valid
+    # neighbour along Y so the surface has no holes or sudden collapses.
+    Z_real_s = fill_along_y(Z_real_s)
+    Z_impl_s = fill_along_y(Z_impl_s)
+    Z_all_s  = fill_along_y(Z_all_s)
+    Z_up_s   = fill_along_y(Z_up_s)
+
     Z_gap    = Z_real_s - Z_impl_s
 
     print_self_check(
         Z_real_s=Z_real_s,
         Z_impl_s=Z_impl_s,
-        Z_all_count=Z_all,
-        Z_up_count=Z_up,
+        Z_all_count=Z_all_s,
+        Z_up_count=Z_up_s,
         coverage=coverage,
     )
 
@@ -1072,9 +1117,9 @@ def main() -> None:
         Z_real_s=Z_real_s,
         Z_impl_s=Z_impl_s,
         Z_gap=Z_gap,
-        Z_up_count=Z_up,
-        Z_all_count=Z_all,
-        Z_impl_count=Z_icnt,
+        Z_up_count=Z_up_s,
+        Z_all_count=Z_all_s,
+        Z_impl_count=Z_icnt_s,
         total_up=total_up,
         market_seconds=args.market_seconds,
         implied_universe=args.implied_universe,
