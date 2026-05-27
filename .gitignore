@@ -44,3 +44,7 @@ Reuniones/
 # Course materials (not for repo)
 Slides/
 Milestone*.pdf
+
+!website/package.json
+!website/package-lock.json
+!website/tsconfig*.json
