@@ -59,8 +59,8 @@ BUCKET_WIDTH_DEFAULT = 0.01          # percentage points; -0.50..+0.40 gives 91 
 TIME_STEP_DEFAULT = 5                # displayed time_remaining spacing in seconds
 
 # Use --sigma-y 0 --sigma-t 0 for completely raw surfaces.
-SIGMA_Y = 0.50                       # smoothing in bucket-grid cells
-SIGMA_T = 0.40                       # smoothing in time-grid cells
+SIGMA_Y = 3.0                        # smoothing in bucket-grid cells (use 0 for raw)
+SIGMA_T = 2.0                        # smoothing in time-grid cells   (use 0 for raw)
 
 BG = "#0f172a"
 
