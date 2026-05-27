@@ -20,5 +20,9 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
+*.slns
 *.sw?
+
+!website/package.json
+!website/package-lock.json
+!website/tsconfig*.json
