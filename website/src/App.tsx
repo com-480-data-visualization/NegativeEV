@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import Playground from './components/Playground'
+import BtcDistributionChart from './components/BtcDistributionChart'
+import HeatmapChart from './components/HeatmapChart'
+import MarkovDiagram from './components/MarkovDiagram'
 
 // ── Animated counter hook ────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 1800, delay = 0) {
@@ -162,10 +165,64 @@ export default function App() {
         />
       </section>
 
+      {/* ── Block B: Distributions & heatmaps ───────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 pb-20">
+        <SectionHeader
+          eyebrow="Analysis · Section 2"
+          title="Distributions &amp; market patterns"
+          description={
+            `Where does the crowd tend to be right or wrong? The histogram shows the distribution ` +
+            `of final BTC price changes across all 9,175 markets (6 exact-tie events excluded), ` +
+            `colored by actual price movement — green bars are markets that ended higher than they ` +
+            `opened, red bars ended lower. The yellow curve is a normal-distribution fit; fat tails ` +
+            `reveal more extreme moves than a Gaussian model predicts. ` +
+            `The heatmap shows UP rate and market volume by hour and day of week (UTC).`
+          }
+        />
+
+        {/* Distribution histogram */}
+        <div className="rounded-2xl border border-border bg-surface-elevated px-5 pt-5 pb-4 mb-6">
+          <h3 className="text-sm font-semibold text-white mb-4">Final BTC Δ distribution by outcome</h3>
+          <BtcDistributionChart />
+        </div>
+
+        {/* Hourly heatmap */}
+        <div className="rounded-2xl border border-border bg-surface-elevated px-5 pt-5 pb-4">
+          <h3 className="text-sm font-semibold text-white mb-4">UP rate &amp; market volume by day &amp; hour (UTC)</h3>
+          <HeatmapChart />
+        </div>
+      </section>
+
+      {/* ── Divider ──────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-5xl px-6 py-8">
+        <hr className="border-border" />
+      </div>
+
+      {/* ── Block C: Markov chain ────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 pb-20">
+        <SectionHeader
+          eyebrow="Analysis · Section 3"
+          title="Markov chain &amp; streak analysis"
+          description={
+            `Are consecutive outcomes independent? The diagram shows empirical transition probabilities ` +
+            `between UP and DOWN outcomes computed from 7,000+ sequential markets. ` +
+            `Hit Simulate to run a 20-step random walk through the chain. ` +
+            `The streak histogram below reveals how often long runs of the same outcome occur — ` +
+            `if markets were truly i.i.d., streaks would follow a geometric distribution.`
+          }
+        />
+        <MarkovDiagram />
+      </section>
+
+      {/* ── Divider ──────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-5xl px-6 py-8">
+        <hr className="border-border" />
+      </div>
+
       {/* ── Trading playground ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 pb-28">
         <SectionHeader
-          eyebrow="Interactive · Section 2"
+          eyebrow="Interactive · Section 4"
           title="Trading playground"
           description={
             `Replay 50 real BTC 5-minute markets sequentially. Buy and sell UP / DOWN tokens ` +
