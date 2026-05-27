@@ -23,6 +23,3 @@ dist-ssr
 *.slns
 *.sw?
 
-!website/package.json
-!website/package-lock.json
-!website/tsconfig*.json

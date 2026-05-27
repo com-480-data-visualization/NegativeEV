@@ -45,6 +45,18 @@ The first 2,000 oldest markets are skipped (`--skip-first 2000`) because early
 data is anomalous. Surfaces are Gaussian-smoothed (`sigma-y=3.0`, `sigma-t=2.0`)
 for visual clarity.
 
+**Rendering notes (important for smooth output):**
+
+- Data is serialised with X = `time_remaining` in **ascending** order
+  (5 s → 295 s).  ECharts GL requires ascending X for correct surface grid
+  auto-detection; descending data causes triangulation artifacts ("fins").
+  The `xAxis3D` uses `inverse: true` which is a **display-only** flip — it does
+  not affect the internal mesh — so the chart reads 295 s on the left (market
+  start) → 5 s on the right (market end), labelled **"Time remaining (s)"**.
+- Shading is set to `'color'` (no lighting/normal calculation).  `'lambert'`
+  shading produces visual artifacts on steep surface gradients and must not be
+  used.
+
 **Standard command (smooth output):**
 
 ```bash

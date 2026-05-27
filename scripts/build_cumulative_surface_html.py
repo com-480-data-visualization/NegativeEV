@@ -463,8 +463,12 @@ def matrix_to_surface_points(
     ECharts surface data points.
 
     Each point:
-      [time_remaining, y_upper, z_surface, realized, implied, gap,
+      [time_elapsed, y_upper, z_surface, realized, implied, gap,
        up_count_in_bucket, all_count_in_bucket, impl_count_in_bucket]
+
+    X stores time_remaining (descending: 295…5).  The ECharts GL xAxis3D uses
+    inverse: true so the display shows 295 on the left (market start) → 5 on
+    the right (market end).
     """
     out: list[list[float | int]] = []
     for yi, y in enumerate(Y):
@@ -475,7 +479,7 @@ def matrix_to_surface_points(
             z_g  = Z_gap[yi, ti]
             out.append(
                 [
-                    int(t),
+                    int(t),   # time_remaining
                     round_float(float(y), 4),
                     round_float(float(z_s)  if np.isfinite(z_s)  else float("nan"), 6),
                     round_float(float(z_r)  if np.isfinite(z_r)  else float("nan"), 6),
@@ -509,20 +513,26 @@ def surface_payload(
     gap_abs = max(abs(float(finite_gap.min())), abs(float(finite_gap.max())), 0.01) if finite_gap.size else 0.1
     gap_range = round(gap_abs * 1.15, 4)   # 15% headroom
 
+    # ECharts GL surface grid auto-detection requires ascending X values.
+    # X is time_remaining descending [295…5]; reverse it and flip the T axis of
+    # all Z arrays so data is ascending [5…295].  The xAxis3D uses inverse:true
+    # to display 295 on the left (market start) → 5 on the right (market end).
+    X_asc = X[::-1]
     shared_points_kw = dict(
-        X=X, Y=Y,
-        Z_real=Z_real_s, Z_impl=Z_impl_s, Z_gap=Z_gap,
-        Z_up_count=Z_up_count, Z_all_count=Z_all_count, Z_impl_count=Z_impl_count,
+        X=X_asc, Y=Y,
+        Z_real=Z_real_s[:, ::-1], Z_impl=Z_impl_s[:, ::-1], Z_gap=Z_gap[:, ::-1],
+        Z_up_count=Z_up_count[:, ::-1], Z_all_count=Z_all_count[:, ::-1],
+        Z_impl_count=Z_impl_count[:, ::-1],
     )
     return {
         "meta": {
             "totalUp": int(total_up),
             "marketSeconds": int(market_seconds),
             "impliedUniverse": implied_universe,
-            "nTime": int(len(X)),
+            "nTime": int(len(X_asc)),
             "nY": int(len(Y)),
-            "timeMin": int(np.min(X)),
-            "timeMax": int(np.max(X)),
+            "timeMin": int(np.min(X_asc)),
+            "timeMax": int(np.max(X_asc)),
             "yMin": float(np.min(Y)),
             "yMax": float(np.max(Y)),
             "bucketWidth": float(bucket_width),
@@ -722,7 +732,7 @@ def build_html(payload: dict) -> str:
     function tooltipFormatter(params) {{
       const v = params.value;
       // [time, y_upper, zSurface, realized, implied, gap, cumUpCount, cumAllCount, cumImplCount]
-      const time    = v[0];
+      const time    = v[0];   // time_remaining
       const yUpper  = v[1];
       const realized = v[3];
       const implied  = v[4];
@@ -743,7 +753,7 @@ def build_html(payload: dict) -> str:
 
       return `
         <div style="min-width:290px;line-height:1.6">
-          <div>Time elapsed: <b>${{time}} s</b></div>
+          <div>Time remaining: <b>${{time}} s</b></div>
           <div>Bucket: <b>${{bucketLabel}}</b></div>
           <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
           <div>Realized: ${{r ? bold(fmt4(realized)) : fmt4(realized)}}</div>
@@ -795,12 +805,12 @@ def build_html(payload: dict) -> str:
         }},
         xAxis3D: {{
           type: 'value',
-          name: 'Time elapsed (s)',
+          name: 'Time remaining (s)',
           min: PAYLOAD.meta.timeMin,
           max: PAYLOAD.meta.timeMax,
           inverse: true,
           nameTextStyle: {{ color: '#e5e7eb' }},
-          axisLabel: {{ color: '#cbd5e1' }},
+          axisLabel: {{ color: '#cbd5e1', hideOverlap: true }},
           axisLine: {{ lineStyle: {{ color: '#94a3b8' }} }},
           splitLine: {{ lineStyle: {{ color: '#334155' }} }},
         }},
@@ -853,7 +863,7 @@ def build_html(payload: dict) -> str:
           type: 'surface',
           name: ds.zName,
           data: ds.data,
-          shading: 'lambert',
+          shading: 'color',
           wireframe: {{ show: false }},
           itemStyle: {{ opacity: 0.97 }},
           silent: false,
