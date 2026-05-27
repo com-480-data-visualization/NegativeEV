@@ -1,27 +1,43 @@
 #!/usr/bin/env python3
 """
-UP-only cumulative 3D calibration surface for Polymarket BTC 5-minute UP/DOWN markets.
+Conditional 3D calibration surface for Polymarket BTC 5-minute UP/DOWN markets.
 
 This version does NOT use Plotly. It writes one standalone HTML file that uses
 Apache ECharts + ECharts-GL for the 3D surface rendering.
 
-For each time remaining T and BTC-change threshold Y:
+For each time remaining T and BTC threshold Y the surface answers:
 
-    realized[Y, T] = #{eventual-UP markets with btc_pct_change(T) <= Y}
-                     / #{all eventual-UP markets}
+    "Given the BTC price change condition is already met at time T, what is the
+     historical probability that the market ends UP?"
 
-So one eventual-UP market observed at time T with btc_pct_change = +0.10% contributes
-+1 to the +0.10% threshold bucket and to every higher threshold bucket.
+The Z-axis represents a directional conditional probability:
 
-The implied surface is computed on the same cumulative threshold grid:
+    For Y >= 0 (upward threshold):
+        realized[Y, T] = P(UP | BTC Δ >= Y, time T)
+                       = #{UP markets with BTC Δ >= Y at T}
+                         / #{all markets with BTC Δ >= Y at T}
 
-    implied[Y, T] = sum(implied_prob(T) for quoted markets with btc_pct_change(T) <= Y)
-                    / #{all eventual-UP markets}
+    For Y < 0 (downward threshold):
+        realized[Y, T] = P(UP | BTC Δ <= Y, time T)
+                       = #{UP markets with BTC Δ <= Y at T}
+                         / #{all markets with BTC Δ <= Y at T}
 
-By default implied uses all quoted markets, because the UP price is a forecast of the UP
-outcome. If you want to ignore eventual-DOWN markets even for implied mass, pass:
+A strong positive move (large Y) → high UP probability.
+A strong negative move (large |Y|) → low UP probability.
 
-    --implied-universe up-only
+Gaussian smoothing is applied to numerator and denominator separately
+to fill sparse tails without distorting interior probabilities.
+
+The implied surface uses the same matching set:
+
+    implied[Y, T] = avg(implied_prob | same condition as realized)
+
+Gap:
+
+    gap[Y, T] = realized[Y, T] - implied[Y, T]
+
+By default implied uses all quoted markets. Pass --implied-universe up-only to
+restrict to eventual-UP markets only.
 
 Output
 ------
@@ -58,9 +74,10 @@ Y_MIN, Y_MAX = -0.50, 0.40          # percent units, not decimals
 BUCKET_WIDTH_DEFAULT = 0.01          # percentage points; -0.50..+0.40 gives 91 thresholds
 TIME_STEP_DEFAULT = 5                # displayed time_remaining spacing in seconds
 
-# Use --sigma-y 0 --sigma-t 0 for completely raw surfaces.
-SIGMA_Y = 3.0                        # smoothing in bucket-grid cells (use 0 for raw)
-SIGMA_T = 2.0                        # smoothing in time-grid cells   (use 0 for raw)
+# sigma_y fills sparse extreme buckets so the surface reaches 0 and 1 at the tails.
+# sigma_t reduces per-time-step noise.  Use 0 for completely raw surfaces.
+SIGMA_Y = 5.0
+SIGMA_T = 2.0
 
 BG = "#0f172a"
 
@@ -270,84 +287,78 @@ def make_t_grid(market_seconds: int, time_step: int) -> list[int]:
     return list(range(market_seconds, -1, -time_step))
 
 
-def cumulative_by_threshold(
+def directional_by_threshold(
     values: np.ndarray,
     weights: np.ndarray,
     y_grid: np.ndarray,
 ) -> np.ndarray:
     """
-    Add each observation's weight to the first threshold bucket >= value and every
-    higher threshold bucket.
+    Directional tail count for P(UP | condition already met at time T).
 
-    This implements:
+    For each grid point y:
+      - y >= 0:  out[i] = sum(weights where value >= y)   (right-tail / up-exceedance)
+      - y <  0:  out[i] = sum(weights where value <= y)   (left-tail  / down-exceedance)
 
-        surface[Y] = sum(weights for rows where btc_pct_change <= Y)
+    This answers "given BTC has already moved at least Y, how often does it end UP?".
+    The surface is monotone: strong up move → high UP probability, strong down → low.
     """
     if len(values) == 0:
         return np.zeros(len(y_grid), dtype=float)
 
-    values = np.asarray(values, dtype=float)
+    values  = np.asarray(values,  dtype=float)
     weights = np.asarray(weights, dtype=float)
-
-    finite = np.isfinite(values) & np.isfinite(weights)
+    finite  = np.isfinite(values) & np.isfinite(weights)
     if not np.any(finite):
         return np.zeros(len(y_grid), dtype=float)
 
     clipped = np.clip(values[finite], y_grid[0], y_grid[-1])
-    w = weights[finite]
+    w       = weights[finite]
 
-    # side="left" means a value exactly equal to the bucket threshold contributes to
-    # that threshold bucket.
-    start_idx = np.searchsorted(y_grid, clipped, side="left")
-    start_idx = np.clip(start_idx, 0, len(y_grid) - 1)
+    # Per-bucket counts (base counts for cumsum tricks)
+    idx = np.searchsorted(y_grid, clipped, side="right") - 1
+    idx = np.clip(idx, 0, len(y_grid) - 1)
+    per_bucket = np.zeros(len(y_grid), dtype=float)
+    np.add.at(per_bucket, idx, w)
 
-    starts = np.zeros(len(y_grid), dtype=float)
-    np.add.at(starts, start_idx, w)
-    return np.cumsum(starts)
+    # Left-tail cumsum: left_cs[i] = sum of per_bucket[0..i]  (value <= y_grid[i])
+    left_cs  = np.cumsum(per_bucket)
+    # Right-tail cumsum: right_cs[i] = sum of per_bucket[i..end]  (value >= y_grid[i])
+    right_cs = np.cumsum(per_bucket[::-1])[::-1]
+
+    # Directional selection: >= for positive thresholds, <= for negative
+    return np.where(y_grid >= 0, right_cs, left_cs)
 
 
 def build_surfaces(
     df: pd.DataFrame,
     y_grid: np.ndarray,
     t_vals: list[int],
-    total_up: int,
     *,
     implied_universe: ImpliedUniverse,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Compute cumulative probability surfaces.
+    Compute directional tail-count surfaces for conditional probability.
 
-    Y-axis values are thresholds.  For each threshold Y and time T:
+    For each threshold Y and time T:
+      - Y >= 0:  Z_up[Y,T]  = #{UP markets with BTC Δ >= Y at T}
+                 Z_all[Y,T] = #{all markets with BTC Δ >= Y at T}
+      - Y <  0:  Z_up[Y,T]  = #{UP markets with BTC Δ <= Y at T}
+                 Z_all[Y,T] = #{all markets with BTC Δ <= Y at T}
 
-        realized[Y, T] = #{UP markets with BTC Δ ≤ Y at T}  /  total_UP
-
-        implied[Y, T]  = Σ implied_prob(m) for all markets m with BTC Δ ≤ Y at T
-                         /  total_UP
-
-    Both surfaces are normalized by total_UP, so:
-      • realized goes from ~0 at Y_MIN to 1.0 at Y_MAX
-      • implied  goes from ~0 at Y_MIN to ~1.0 at Y_MAX (market is roughly calibrated)
-
-    Interpretation: realized[Y, T] = fraction of eventual-UP outcomes whose BTC Δ
-    was at or below Y at time T.  A high value means "most UP markets had already
-    reached this price level by time T" — i.e., strong signal of UP outcome.
-
-    Returns (N_Y, N_T) arrays:
-        Z_cum_up   – cumulative UP count  (raw, before /total_UP)
-        Z_cum_isum – cumulative implied-prob sum (raw, before /total_UP)
-        Z_cum_icnt – cumulative count of quoted rows (for tooltip)
-        Z_cum_all  – cumulative all-market count (for tooltip denominator)
-        coverage   – fraction of markets with BTC observation, per time step
+    After Gaussian smoothing:
+        Realized[Y, T] = smooth(Z_up) / smooth(Z_all)  = P(UP | condition met, T)
+        Implied[Y, T]  = smooth(Z_isum) / smooth(Z_icnt)
+        Gap[Y, T]      = Realized - Implied
     """
     n_y = len(y_grid)
     n_t = len(t_vals)
 
-    Z_cum_up   = np.zeros((n_y, n_t), dtype=float)
-    Z_cum_all  = np.zeros((n_y, n_t), dtype=float)
-    Z_cum_isum = np.zeros((n_y, n_t), dtype=float)
-    Z_cum_icnt = np.zeros((n_y, n_t), dtype=float)
+    Z_up   = np.zeros((n_y, n_t), dtype=float)
+    Z_all  = np.zeros((n_y, n_t), dtype=float)
+    Z_isum = np.zeros((n_y, n_t), dtype=float)
+    Z_icnt = np.zeros((n_y, n_t), dtype=float)
 
-    print("Computing cumulative surfaces (normalized by total_UP) ...", flush=True)
+    print("Computing directional conditional probability surfaces ...", flush=True)
 
     grouped = {int(t): g for t, g in df.groupby("time_remaining", sort=False)}
     ones = np.ones
@@ -357,19 +368,16 @@ def build_surfaces(
         if grp is None or grp.empty:
             continue
 
-        # ── All markets (for coverage / tooltip) ─────────────────────────
         all_m = grp[np.isfinite(grp["btc_pct_change"])]
         if not all_m.empty:
             vals = all_m["btc_pct_change"].to_numpy(float)
-            Z_cum_all[:, t_idx] = cumulative_by_threshold(vals, ones(len(vals)), y_grid)
+            Z_all[:, t_idx] = directional_by_threshold(vals, ones(len(vals)), y_grid)
 
-        # ── UP markets: cumulative count ──────────────────────────────────
         up = grp[(grp["winner_binary"] == 1) & np.isfinite(grp["btc_pct_change"])]
         if not up.empty:
             vals = up["btc_pct_change"].to_numpy(float)
-            Z_cum_up[:, t_idx] = cumulative_by_threshold(vals, ones(len(vals)), y_grid)
+            Z_up[:, t_idx] = directional_by_threshold(vals, ones(len(vals)), y_grid)
 
-        # ── All markets: cumulative implied-prob sum ──────────────────────
         if implied_universe == "up-only":
             impl_grp = grp[grp["winner_binary"] == 1]
         elif implied_universe == "all":
@@ -383,24 +391,21 @@ def build_surfaces(
         if not impl_grp.empty:
             vals  = impl_grp["btc_pct_change"].to_numpy(float)
             probs = impl_grp["implied_prob"].to_numpy(float)
-            Z_cum_isum[:, t_idx] = cumulative_by_threshold(vals, probs, y_grid)
-            Z_cum_icnt[:, t_idx] = cumulative_by_threshold(vals, ones(len(vals)), y_grid)
+            Z_isum[:, t_idx] = directional_by_threshold(vals, probs, y_grid)
+            Z_icnt[:, t_idx] = directional_by_threshold(vals, ones(len(vals)), y_grid)
 
-    # Coverage: fraction of markets observed at each T (top threshold = all markets)
-    total_markets = float(Z_cum_all[-1, :].max()) or 1.0
-    coverage = Z_cum_all[-1, :] / total_markets
-
-    # Diagnostics
+    # At Y=0 the right-tail count equals all markets with BTC Δ >= 0 (roughly half).
+    # The maximum count across Y occurs at the most inclusive threshold.
+    # For positive side: y_grid[first non-negative idx] has the highest right-tail count.
+    # For coverage purposes use the Y=0 column (most populated for both directions).
+    zero_idx = int(np.searchsorted(y_grid, 0.0, side="left"))
+    total_markets = int(Z_all[zero_idx, :].max())
+    total_up_peak = int(Z_up[zero_idx, :].max())
     print(f"  Grid: {n_y:,} thresholds x {n_t:,} time steps")
-    print(f"  Total UP markets (denominator): {total_up:,}")
-    print(f"  Total all markets (peak): {int(total_markets):,}")
-    populated = coverage > 0
-    top_mean = float(np.mean(Z_cum_up[-1, populated])) / total_up if populated.any() else 0
-    bot_mean = float(np.mean(Z_cum_up[0, populated]))  / total_up if populated.any() else 0
-    print(f"  Realized @ Y_MAX mean = {top_mean:.4f}  (expected 1.0000)")
-    print(f"  Realized @ Y_MIN mean = {bot_mean:.6f}  (expected ~0)")
+    print(f"  Peak all-markets count (at Y=0): {total_markets:,}")
+    print(f"  Peak UP-markets count  (at Y=0): {total_up_peak:,}")
 
-    return Z_cum_up, Z_cum_isum, Z_cum_icnt, Z_cum_all, coverage
+    return Z_up, Z_isum, Z_icnt, Z_all
 
 
 # ---------------------------------------------------------------------------
@@ -539,42 +544,42 @@ def surface_payload(
         },
         "datasets": {
             "realized": {
-                "title": "Realized UP — fraction of eventual-UP markets with BTC Δ ≤ Y at T",
-                "subtitle": "#{UP markets with BTC Δ ≤ Y at T} / total_UP  — 0 at Y_MIN → 1.0 at Y_MAX",
-                "zName": "Realized (cumul. UP / total_UP)",
+                "title": "Realized — P(UP | BTC move condition met at time T)",
+                "subtitle": "Y>0: P(UP|BTC Δ≥Y,T)  ·  Y<0: P(UP|BTC Δ≤Y,T)  ·  Gaussian-smoothed",
+                "zName": "Realized P(UP)",
                 "zMin": 0,
                 "zMax": 1,
                 "visualMin": 0,
                 "visualMax": 1,
                 "palette": "prob",
                 "data": matrix_to_surface_points(
-                    **shared_points_kw, Z_surface=Z_real_s,
+                    **shared_points_kw, Z_surface=Z_real_s[:, ::-1],
                 ),
             },
             "implied": {
-                "title": "Implied UP — cumulative market-quoted probability with BTC Δ ≤ Y at T",
-                "subtitle": "Σ implied_prob for markets with BTC Δ ≤ Y at T  / total_UP  — 0 at Y_MIN → ~1.0 at Y_MAX",
-                "zName": "Implied (cumul. impl / total_UP)",
+                "title": "Implied — avg market-quoted P(UP | BTC move condition met at time T)",
+                "subtitle": "avg(implied_prob) over same directional matching set as realized",
+                "zName": "Implied P(UP)",
                 "zMin": 0,
                 "zMax": 1,
                 "visualMin": 0,
                 "visualMax": 1,
                 "palette": "prob",
                 "data": matrix_to_surface_points(
-                    **shared_points_kw, Z_surface=Z_impl_s,
+                    **shared_points_kw, Z_surface=Z_impl_s[:, ::-1],
                 ),
             },
             "gap": {
-                "title": "Calibration gap: implied − realized",
-                "subtitle": "Red = market over-prices UP  |  blue = under-prices UP",
-                "zName": "Implied − realized",
+                "title": "Calibration gap: realized − implied",
+                "subtitle": "Green = market under-prices UP  |  red = over-prices UP",
+                "zName": "Realized − Implied gap",
                 "zMin": -gap_range,
                 "zMax": gap_range,
                 "visualMin": -gap_range,
                 "visualMax": gap_range,
                 "palette": "gap",
                 "data": matrix_to_surface_points(
-                    **shared_points_kw, Z_surface=Z_gap,
+                    **shared_points_kw, Z_surface=Z_gap[:, ::-1],
                 ),
             },
         },
@@ -731,38 +736,42 @@ def build_html(payload: dict) -> str:
 
     function tooltipFormatter(params) {{
       const v = params.value;
-      // [time, y_upper, zSurface, realized, implied, gap, cumUpCount, cumAllCount, cumImplCount]
-      const time    = v[0];   // time_remaining
-      const yUpper  = v[1];
+      // v = [time_remaining, y_threshold, z_surface, realized, implied, gap, matchCount, upCount, implCount]
+      const time     = v[0];
+      const y        = v[1];
       const realized = v[3];
       const implied  = v[4];
       const gap      = v[5];
-      const cumUp    = v[6];   // cumulative UP markets with BTC Δ ≤ yUpper
-      const cumAll   = v[7];   // cumulative all markets with BTC Δ ≤ yUpper
-      const cumImpl  = v[8];   // cumulative quoted rows with BTC Δ ≤ yUpper
-      const totalUp  = PAYLOAD.meta.totalUp;
-      const bw       = PAYLOAD.meta.bucketWidth;
-      const yLower   = yUpper - bw;
-
-      const bucketLabel = `]${{fmtPct(yLower)}},\u00a0${{fmtPct(yUpper)}}]`;
+      const matchAll = v[7];   // all markets where condition is met
+      const matchUp  = v[6];   // UP markets where condition is met
 
       const bold = (s) => `<b>${{s}}</b>`;
       const r = currentMode === 'realized';
       const i = currentMode === 'implied';
       const g = currentMode === 'gap';
 
+      const realFmt = isFinite(realized) ? fmt4(realized) : '—';
+      const implFmt = isFinite(implied)  ? fmt4(implied)  : '—';
+      const gapFmt  = isFinite(gap)      ? fmtSigned4(gap) : '—';
+
+      // Show the directional condition
+      const yFmt = fmtPct(y);
+      const condition = y >= 0
+        ? `BTC \u0394 \u2265 ${{yFmt}}`
+        : `BTC \u0394 \u2264 ${{yFmt}}`;
+
       return `
-        <div style="min-width:290px;line-height:1.6">
+        <div style="min-width:320px;line-height:1.7;font-size:12px">
+          <div style="font-weight:700;margin-bottom:4px">P(UP | condition met at time T)</div>
           <div>Time remaining: <b>${{time}} s</b></div>
-          <div>Bucket: <b>${{bucketLabel}}</b></div>
+          <div>Condition: <b>${{condition}}</b></div>
           <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
-          <div>Realized: ${{r ? bold(fmt4(realized)) : fmt4(realized)}}</div>
-          <div>Implied: ${{i ? bold(fmt4(implied)) : fmt4(implied)}}</div>
-          <div>Gap (impl − realized): ${{g ? bold(fmtSigned4(gap)) : fmtSigned4(gap)}}</div>
+          <div>Matching markets: <b>${{fmtInt(matchAll)}}</b></div>
+          <div>UP outcomes: <b>${{fmtInt(matchUp)}}</b></div>
           <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
-          <div>Cumul. UP markets (≤ bucket): ${{fmtInt(cumUp)}} / ${{fmtInt(totalUp)}}</div>
-          <div>Cumul. all markets (≤ bucket): ${{fmtInt(cumAll)}}</div>
-          <div>Cumul. quoted rows: ${{fmtInt(cumImpl)}}</div>
+          <div>Realized P(UP): ${{r ? bold(realFmt) : realFmt}}</div>
+          <div>Implied P(UP): ${{i ? bold(implFmt) : implFmt}}</div>
+          <div>Gap (realized \u2212 implied): ${{g ? bold(gapFmt) : gapFmt}}</div>
         </div>
       `;
     }}
@@ -805,7 +814,7 @@ def build_html(payload: dict) -> str:
         }},
         xAxis3D: {{
           type: 'value',
-          name: 'Time remaining (s)',
+          name: 'Time elapsed (s)',
           min: PAYLOAD.meta.timeMin,
           max: PAYLOAD.meta.timeMax,
           inverse: true,
@@ -1011,52 +1020,45 @@ def main() -> None:
     y_grid = make_y_grid(args.y_min, args.y_max, args.bucket_width)
     t_vals = make_t_grid(args.market_seconds, args.time_step)
 
-    Z_cum_up, Z_cum_isum, Z_cum_icnt, Z_cum_all, coverage = build_surfaces(
+    Z_up, Z_isum, Z_icnt, Z_all = build_surfaces(
         df,
         y_grid,
         t_vals,
-        total_up,
         implied_universe=args.implied_universe,
     )
 
-    # Drop degenerate boundary columns before smoothing.
-    # T=300 (second=0): BTC change is 0 for every market → vertical step-function wall.
-    # T=0  (second=market_seconds): market has closed → typically no observations.
-    # Both create sharp edges that ECharts GL turns into lighting spikes ("fins").
+    # Coverage: fraction of markets per time step (vs peak), measured at Y=0 right-tail.
+    # Used only to drop degenerate boundary time steps.
+    zero_idx = int(np.searchsorted(y_grid, 0.0, side="left"))
+    peak_all = float(Z_all[zero_idx, :].max()) or 1.0
+    coverage = Z_all[zero_idx, :] / peak_all
+
+    # Drop degenerate boundary time steps before smoothing.
     t_arr = np.array(t_vals, dtype=int)
     keep = (coverage > 0) & (t_arr < args.market_seconds) & (t_arr > 0)
     dropped = t_arr[~keep].tolist()
     if dropped:
         print(f"  Dropping {len(dropped)} degenerate time step(s): {dropped}", flush=True)
-    t_vals      = t_arr[keep].tolist()
-    Z_cum_up    = Z_cum_up[:, keep]
-    Z_cum_isum  = Z_cum_isum[:, keep]
-    Z_cum_icnt  = Z_cum_icnt[:, keep]
-    Z_cum_all   = Z_cum_all[:, keep]
-    coverage    = coverage[keep]
+    t_vals   = t_arr[keep].tolist()
+    Z_up     = Z_up[:, keep]
+    Z_isum   = Z_isum[:, keep]
+    Z_icnt   = Z_icnt[:, keep]
+    Z_all    = Z_all[:, keep]
+    coverage = coverage[keep]
 
-    # Normalize by total_UP to get surfaces in [0, 1].
-    # Smooth only in T direction (sigma_y=0): cumulative sum is already aggregated in Y.
-    print("Normalizing by total_UP and smoothing in time direction ...", flush=True)
-    Z_real_raw = Z_cum_up   / total_up
-    Z_impl_raw = Z_cum_isum / total_up
-
-    if args.sigma_t > 0:
-        Z_real_s = gaussian_filter(Z_real_raw, sigma=(0.0, args.sigma_t), mode="nearest")
-        Z_impl_s = gaussian_filter(Z_impl_raw, sigma=(0.0, args.sigma_t), mode="nearest")
-    else:
-        Z_real_s = Z_real_raw.copy()
-        Z_impl_s = Z_impl_raw.copy()
-
-    Z_real_s = np.clip(Z_real_s, 0.0, 1.0)
-    Z_impl_s = np.clip(Z_impl_s, 0.0, 1.0)
-    Z_gap = Z_impl_s - Z_real_s
+    # Smooth numerator and denominator independently before dividing.
+    # sigma_y fills sparse extreme buckets (preventing collapse at ±0.40% edges).
+    # sigma_t reduces per-time-step noise.
+    print("Smoothing and computing conditional probabilities ...", flush=True)
+    Z_real_s = smooth_and_divide(Z_up,   Z_all,  args.sigma_y, args.sigma_t)
+    Z_impl_s = smooth_and_divide(Z_isum, Z_icnt, args.sigma_y, args.sigma_t)
+    Z_gap    = Z_real_s - Z_impl_s
 
     print_self_check(
         Z_real_s=Z_real_s,
         Z_impl_s=Z_impl_s,
-        Z_all_count=Z_cum_all,
-        Z_up_count=Z_cum_up,
+        Z_all_count=Z_all,
+        Z_up_count=Z_up,
         coverage=coverage,
     )
 
@@ -1070,9 +1072,9 @@ def main() -> None:
         Z_real_s=Z_real_s,
         Z_impl_s=Z_impl_s,
         Z_gap=Z_gap,
-        Z_up_count=Z_cum_up,    # cumulative UP count for tooltip
-        Z_all_count=Z_cum_all,  # cumulative all-market count for tooltip
-        Z_impl_count=Z_cum_icnt,
+        Z_up_count=Z_up,
+        Z_all_count=Z_all,
+        Z_impl_count=Z_icnt,
         total_up=total_up,
         market_seconds=args.market_seconds,
         implied_universe=args.implied_universe,

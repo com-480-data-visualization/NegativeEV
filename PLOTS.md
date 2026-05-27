@@ -35,48 +35,58 @@ surface embedded in Section 1 of the website.
 
 **What it computes:**
 
-For every (time-remaining `T`, BTC-change threshold `Y`) grid cell:
+For every (time-remaining `T`, BTC threshold `Y`) grid cell the surface answers:
 
-- **Realized**: `#{eventual-UP markets with btc_pct_change(T) ≤ Y} / total_UP`
-- **Implied**: `Σ implied_prob for markets with btc_pct_change(T) ≤ Y / total_UP`
-- **Gap**: implied − realized
+> "Given the BTC price move condition is already met at time T, what fraction of
+> historical markets ended UP?"
 
-The first 2,000 oldest markets are skipped (`--skip-first 2000`) because early
-data is anomalous. Surfaces are Gaussian-smoothed (`sigma-y=3.0`, `sigma-t=2.0`)
-for visual clarity.
+The Z-axis is a **directional conditional probability**:
+
+- **Y ≥ 0 (upward threshold)**: `P(UP | BTC Δ ≥ Y, T)` = #{UP markets with BTC Δ ≥ Y at T} / #{all markets with BTC Δ ≥ Y at T}
+- **Y < 0 (downward threshold)**: `P(UP | BTC Δ ≤ Y, T)` = #{UP markets with BTC Δ ≤ Y at T} / #{all markets with BTC Δ ≤ Y at T}
+
+Surface behaviour:
+- **BTC Δ ≥ +0.40%, T = 5 s** → Z ≈ 1.0 (nearly guaranteed UP)
+- **BTC Δ ≤ −0.40%, T = 5 s** → Z ≈ 0.0 (nearly guaranteed DOWN)
+- **BTC Δ ≈ 0%, T = 150 s**   → Z ≈ 0.50 (coin flip)
+
+The three modes are:
+- **Realized**: historical UP rate over matching markets
+- **Implied**: average implied P(UP) quoted by the market, same matching set
+- **Gap**: realized − implied (positive = market under-prices UP)
+
+Gaussian smoothing (`sigma-y`, `sigma-t`) is applied to numerator and denominator
+separately before dividing. This fills sparse tails (extreme BTC moves that occur
+rarely) without distorting interior probabilities.
 
 **Rendering notes (important for smooth output):**
 
-- Data is serialised with X = `time_remaining` in **ascending** order
-  (5 s → 295 s).  ECharts GL requires ascending X for correct surface grid
-  auto-detection; descending data causes triangulation artifacts ("fins").
-  The `xAxis3D` uses `inverse: true` which is a **display-only** flip — it does
-  not affect the internal mesh — so the chart reads 295 s on the left (market
-  start) → 5 s on the right (market end), labelled **"Time remaining (s)"**.
-- Shading is set to `'color'` (no lighting/normal calculation).  `'lambert'`
-  shading produces visual artifacts on steep surface gradients and must not be
-  used.
+- Data is serialised with X = `time_remaining` in **ascending** order (5 s → 295 s).
+  ECharts GL requires ascending X for correct surface grid auto-detection; descending
+  data causes triangulation artifacts ("fins").
+  The `xAxis3D` uses `inverse: true` (display-only flip) so the chart reads
+  295 s on the left (market start) → 5 s on the right (market end).
+- Shading must be `'color'`. `'lambert'` produces artifacts on steep gradients.
 
 **Standard command (smooth output):**
 
 ```bash
 python scripts/build_cumulative_surface_html.py \
-  --skip-first 2000 \
-  --sigma-y 3.0 \
+  --sigma-y 5.0 \
   --sigma-t 2.0
 ```
 
-**Raw / experimental variants:**
+**Variants:**
 
 ```bash
-# No smoothing (raw grid, shows noise)
-python scripts/build_cumulative_surface_html.py --skip-first 2000 --sigma-y 0 --sigma-t 0
+# No smoothing (raw grid — noisy tails)
+python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 0
 
 # Finer time resolution (slower, larger HTML)
-python scripts/build_cumulative_surface_html.py --skip-first 2000 --sigma-y 3.0 --sigma-t 2.0 --time-step 3
+python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0 --time-step 3
 
-# Use all markets (no skip)
-python scripts/build_cumulative_surface_html.py --sigma-y 3.0 --sigma-t 2.0
+# Skip first N markets (oldest data may be anomalous)
+python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0 --skip-first 500
 ```
 
 **Output:** `docs/up_cumulative_echarts3d.html` (~3 MB standalone HTML)
@@ -144,7 +154,7 @@ loads `docs/up_cumulative_echarts3d.html` directly without copying files.
 
 ```bash
 # From repo root, with venv active:
-python scripts/build_cumulative_surface_html.py --skip-first 2000 --sigma-y 3.0 --sigma-t 2.0
+python scripts/build_cumulative_surface_html.py --sigma-y 5.0 --sigma-t 2.0
 python scripts/build_analysis_data.py
 python scripts/export_playground_events.py
 ```
