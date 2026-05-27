@@ -37,7 +37,7 @@ def main() -> None:
 
     pool = full.tail(POOL_SIZE)["event_timestamp"].tolist()
 
-    ts = pd.read_parquet(PARQUET)
+    ts = pd.read_parquet(PARQUET, engine="fastparquet")
     ts = ts[ts["event_timestamp"].isin(pool)]
     ts = ts.dropna(subset=["btc_price", "btc_pct_change", "implied_prob"])
     ts["yes_price"] = ts["implied_prob"].astype(float)

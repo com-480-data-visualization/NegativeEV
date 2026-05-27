@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Playground from './components/Playground'
 
 // ── Animated counter hook ────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 1800, delay = 0) {
@@ -161,27 +162,18 @@ export default function App() {
         />
       </section>
 
-      {/* ── Coming soon placeholder ───────────────────────────────────────── */}
+      {/* ── Trading playground ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 pb-28">
         <SectionHeader
-          eyebrow="Analysis · Section 2"
-          title="Coming next"
-          description="A second interactive visualization exploring calibration errors and market inefficiencies over time."
+          eyebrow="Interactive · Section 2"
+          title="Trading playground"
+          description={
+            `Replay 50 real BTC 5-minute markets sequentially. Buy and sell UP / DOWN tokens ` +
+            `at live market prices. At the end of each 5-minute window the winning side pays out $1 ` +
+            `per token — the other side pays $0. Your balance carries over between rounds.`
+          }
         />
-        <div className="rounded-2xl border border-dashed border-border bg-surface-elevated flex flex-col items-center justify-center gap-4 py-24 text-center">
-          <div className="w-14 h-14 rounded-full border-2 border-dashed border-border flex items-center justify-center">
-            <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-medium text-white">Plot coming soon</p>
-            <p className="mt-1 text-sm text-muted max-w-sm">
-              Calibration error analysis — where does the crowd price UP outcomes incorrectly,
-              and how does it evolve as the market approaches close?
-            </p>
-          </div>
-        </div>
+        <Playground />
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
