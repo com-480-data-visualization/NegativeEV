@@ -11,10 +11,16 @@
 
 html {
   @apply antialiased;
+  scroll-behavior: smooth;
 }
 
 body {
   @apply m-0 min-h-svh bg-surface font-sans text-gray-100;
+}
+
+/* Offset anchored sections so the sticky NavHeader doesn't cover them. */
+section[id] {
+  scroll-margin-top: 64px;
 }
 
 /* Dividers between stat-grid children */

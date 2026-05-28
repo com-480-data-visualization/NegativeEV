@@ -4,1009 +4,1177 @@
       "dow": 0,
       "hour": 0,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.4375,
+      "volume": 4239110.45
     },
     {
       "dow": 0,
       "hour": 1,
       "count": 48,
-      "up_rate": 0.375
+      "up_rate": 0.3542,
+      "volume": 3001135.9
     },
     {
       "dow": 0,
       "hour": 2,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.5,
+      "volume": 2749789.66
     },
     {
       "dow": 0,
       "hour": 3,
       "count": 48,
-      "up_rate": 0.6458
+      "up_rate": 0.6458,
+      "volume": 3796679.2
     },
     {
       "dow": 0,
       "hour": 4,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.5208,
+      "volume": 3769228.66
     },
     {
       "dow": 0,
       "hour": 5,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.5417,
+      "volume": 3609517.97
     },
     {
       "dow": 0,
       "hour": 6,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.3958,
+      "volume": 3616099.09
     },
     {
       "dow": 0,
       "hour": 7,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.5833,
+      "volume": 3638667.7
     },
     {
       "dow": 0,
       "hour": 8,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5625,
+      "volume": 4045570.71
     },
     {
       "dow": 0,
       "hour": 9,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5208,
+      "volume": 4143836.32
     },
     {
       "dow": 0,
       "hour": 10,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.4167,
+      "volume": 3821764.38
     },
     {
       "dow": 0,
       "hour": 11,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5208,
+      "volume": 3948123.41
     },
     {
       "dow": 0,
       "hour": 12,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.4792,
+      "volume": 4232755.52
     },
     {
       "dow": 0,
       "hour": 13,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.375,
+      "volume": 4217960.74
     },
     {
       "dow": 0,
       "hour": 14,
       "count": 48,
-      "up_rate": 0.6042
+      "up_rate": 0.625,
+      "volume": 5550862.17
     },
     {
       "dow": 0,
       "hour": 15,
       "count": 48,
-      "up_rate": 0.4375
+      "up_rate": 0.4792,
+      "volume": 6238846.85
     },
     {
       "dow": 0,
       "hour": 16,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5,
+      "volume": 5840024.98
     },
     {
       "dow": 0,
       "hour": 17,
       "count": 48,
-      "up_rate": 0.375
+      "up_rate": 0.3542,
+      "volume": 5526416.69
     },
     {
       "dow": 0,
       "hour": 18,
       "count": 48,
-      "up_rate": 0.4375
+      "up_rate": 0.4375,
+      "volume": 5576708.79
     },
     {
       "dow": 0,
       "hour": 19,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5208,
+      "volume": 4689211.28
     },
     {
       "dow": 0,
       "hour": 20,
       "count": 48,
-      "up_rate": 0.6667
+      "up_rate": 0.6458,
+      "volume": 4504875.46
     },
     {
       "dow": 0,
       "hour": 21,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5625,
+      "volume": 3797109.69
     },
     {
       "dow": 0,
       "hour": 22,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.4792,
+      "volume": 4778434.48
     },
     {
       "dow": 0,
       "hour": 23,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.4375,
+      "volume": 4344477.97
     },
     {
       "dow": 1,
       "hour": 0,
       "count": 48,
-      "up_rate": 0.6667
+      "up_rate": 0.625,
+      "volume": 4499732.43
     },
     {
       "dow": 1,
       "hour": 1,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.4792,
+      "volume": 4599340.25
     },
     {
       "dow": 1,
       "hour": 2,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5417,
+      "volume": 4398773.96
     },
     {
       "dow": 1,
       "hour": 3,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.3542,
+      "volume": 4191584.22
     },
     {
       "dow": 1,
       "hour": 4,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.5208,
+      "volume": 3782552.33
     },
     {
       "dow": 1,
       "hour": 5,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.6042,
+      "volume": 3505164.25
     },
     {
       "dow": 1,
       "hour": 6,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.5625,
+      "volume": 4029310.85
     },
     {
       "dow": 1,
       "hour": 7,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5208,
+      "volume": 4537048.5
     },
     {
       "dow": 1,
       "hour": 8,
       "count": 48,
-      "up_rate": 0.3125
+      "up_rate": 0.3125,
+      "volume": 5028025.17
     },
     {
       "dow": 1,
       "hour": 9,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.3958,
+      "volume": 4606480.22
     },
     {
       "dow": 1,
       "hour": 10,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.4167,
+      "volume": 4508995.27
     },
     {
       "dow": 1,
       "hour": 11,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.4792,
+      "volume": 4528979.0
     },
     {
       "dow": 1,
       "hour": 12,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.5833,
+      "volume": 4794654.55
     },
     {
       "dow": 1,
       "hour": 13,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.5208,
+      "volume": 4667755.43
     },
     {
       "dow": 1,
       "hour": 14,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5625,
+      "volume": 4618835.72
     },
     {
       "dow": 1,
       "hour": 15,
       "count": 48,
-      "up_rate": 0.625
+      "up_rate": 0.6042,
+      "volume": 4380422.57
     },
     {
       "dow": 1,
       "hour": 16,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.4375,
+      "volume": 5571590.86
     },
     {
       "dow": 1,
       "hour": 17,
       "count": 48,
-      "up_rate": 0.5417
+      "up_rate": 0.5417,
+      "volume": 6038317.92
     },
     {
       "dow": 1,
       "hour": 18,
       "count": 48,
-      "up_rate": 0.5417
+      "up_rate": 0.5625,
+      "volume": 5427699.37
     },
     {
       "dow": 1,
       "hour": 19,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.5417,
+      "volume": 5737496.33
     },
     {
       "dow": 1,
       "hour": 20,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.6042,
+      "volume": 4911452.17
     },
     {
       "dow": 1,
       "hour": 21,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.3958,
+      "volume": 3904735.91
     },
     {
       "dow": 1,
       "hour": 22,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.4583,
+      "volume": 4028543.71
     },
     {
       "dow": 1,
       "hour": 23,
       "count": 48,
-      "up_rate": 0.5417
+      "up_rate": 0.5625,
+      "volume": 4229710.58
     },
     {
       "dow": 2,
       "hour": 0,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.4167,
+      "volume": 4131238.16
     },
     {
       "dow": 2,
       "hour": 1,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.5625,
+      "volume": 5167444.97
     },
     {
       "dow": 2,
       "hour": 2,
       "count": 48,
-      "up_rate": 0.4375
+      "up_rate": 0.4583,
+      "volume": 3902324.69
     },
     {
       "dow": 2,
       "hour": 3,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.5,
+      "volume": 5065305.24
     },
     {
       "dow": 2,
       "hour": 4,
       "count": 48,
-      "up_rate": 0.5833
+      "up_rate": 0.5625,
+      "volume": 3982462.76
     },
     {
       "dow": 2,
       "hour": 5,
       "count": 48,
-      "up_rate": 0.4167
+      "up_rate": 0.3958,
+      "volume": 3508053.94
     },
     {
       "dow": 2,
       "hour": 6,
       "count": 48,
-      "up_rate": 0.6042
+      "up_rate": 0.5833,
+      "volume": 4087226.51
     },
     {
       "dow": 2,
       "hour": 7,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.5208,
+      "volume": 4527653.69
     },
     {
       "dow": 2,
       "hour": 8,
       "count": 48,
-      "up_rate": 0.6042
+      "up_rate": 0.625,
+      "volume": 5075795.49
     },
     {
       "dow": 2,
       "hour": 9,
       "count": 48,
-      "up_rate": 0.625
+      "up_rate": 0.5625,
+      "volume": 4961524.22
     },
     {
       "dow": 2,
       "hour": 10,
       "count": 48,
-      "up_rate": 0.4583
+      "up_rate": 0.4792,
+      "volume": 3548975.2
     },
     {
       "dow": 2,
       "hour": 11,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.4167,
+      "volume": 4565074.86
     },
     {
       "dow": 2,
       "hour": 12,
       "count": 48,
-      "up_rate": 0.6042
+      "up_rate": 0.6458,
+      "volume": 4284316.64
     },
     {
       "dow": 2,
       "hour": 13,
       "count": 48,
-      "up_rate": 0.4792
+      "up_rate": 0.5625,
+      "volume": 4558414.04
     },
     {
       "dow": 2,
       "hour": 14,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5208,
+      "volume": 4148429.32
     },
     {
       "dow": 2,
       "hour": 15,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5625,
+      "volume": 4803462.19
     },
     {
       "dow": 2,
       "hour": 16,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5833,
+      "volume": 5645562.58
     },
     {
       "dow": 2,
       "hour": 17,
       "count": 48,
-      "up_rate": 0.5417
+      "up_rate": 0.5833,
+      "volume": 4609172.58
     },
     {
       "dow": 2,
       "hour": 18,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.5417,
+      "volume": 3984598.33
     },
     {
       "dow": 2,
       "hour": 19,
       "count": 48,
-      "up_rate": 0.4375
+      "up_rate": 0.4792,
+      "volume": 2766948.78
     },
     {
       "dow": 2,
       "hour": 20,
       "count": 48,
-      "up_rate": 0.5
+      "up_rate": 0.4583,
+      "volume": 2513867.61
     },
     {
       "dow": 2,
       "hour": 21,
       "count": 48,
-      "up_rate": 0.5208
+      "up_rate": 0.4583,
+      "volume": 2262377.6
     },
     {
       "dow": 2,
       "hour": 22,
       "count": 48,
-      "up_rate": 0.375
+      "up_rate": 0.3542,
+      "volume": 2672209.77
     },
     {
       "dow": 2,
       "hour": 23,
       "count": 48,
-      "up_rate": 0.3958
+      "up_rate": 0.3958,
+      "volume": 2995697.7
     },
     {
       "dow": 3,
       "hour": 0,
       "count": 52,
-      "up_rate": 0.4808
+      "up_rate": 0.5,
+      "volume": 2540657.37
     },
     {
       "dow": 3,
       "hour": 1,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.5,
+      "volume": 3011122.03
     },
     {
       "dow": 3,
       "hour": 2,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.45,
+      "volume": 2592688.69
     },
     {
       "dow": 3,
       "hour": 3,
       "count": 60,
-      "up_rate": 0.6333
+      "up_rate": 0.65,
+      "volume": 2196250.66
     },
     {
       "dow": 3,
       "hour": 4,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.4667,
+      "volume": 2513948.1
     },
     {
       "dow": 3,
       "hour": 5,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.55,
+      "volume": 2666710.39
     },
     {
       "dow": 3,
       "hour": 6,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.5667,
+      "volume": 2678618.26
     },
     {
       "dow": 3,
       "hour": 7,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.45,
+      "volume": 2721412.66
     },
     {
       "dow": 3,
       "hour": 8,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.55,
+      "volume": 2834963.49
     },
     {
       "dow": 3,
       "hour": 9,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.5833,
+      "volume": 2962943.1
     },
     {
       "dow": 3,
       "hour": 10,
-      "count": 59,
-      "up_rate": 0.6271
+      "count": 60,
+      "up_rate": 0.6333,
+      "volume": 2694451.81
     },
     {
       "dow": 3,
       "hour": 11,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.4833,
+      "volume": 2991661.82
     },
     {
       "dow": 3,
       "hour": 12,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.45,
+      "volume": 2927085.92
     },
     {
       "dow": 3,
       "hour": 13,
       "count": 60,
-      "up_rate": 0.4167
+      "up_rate": 0.4167,
+      "volume": 2983071.28
     },
     {
       "dow": 3,
       "hour": 14,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.5,
+      "volume": 3336842.27
     },
     {
       "dow": 3,
       "hour": 15,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.45,
+      "volume": 3269001.75
     },
     {
       "dow": 3,
       "hour": 16,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.4333,
+      "volume": 4472611.21
     },
     {
       "dow": 3,
       "hour": 17,
       "count": 60,
-      "up_rate": 0.4
+      "up_rate": 0.4333,
+      "volume": 3793430.63
     },
     {
       "dow": 3,
       "hour": 18,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5167,
+      "volume": 3533771.66
     },
     {
       "dow": 3,
       "hour": 19,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.55,
+      "volume": 3534561.84
     },
     {
       "dow": 3,
       "hour": 20,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.4167,
+      "volume": 2935031.14
     },
     {
       "dow": 3,
       "hour": 21,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.5333,
+      "volume": 3041351.2
     },
     {
       "dow": 3,
       "hour": 22,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.55,
+      "volume": 3298239.61
     },
     {
       "dow": 3,
       "hour": 23,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.5167,
+      "volume": 3449433.03
     },
     {
       "dow": 4,
       "hour": 0,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.5167,
+      "volume": 4214385.47
     },
     {
       "dow": 4,
       "hour": 1,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.6167,
+      "volume": 3275254.5
     },
     {
       "dow": 4,
       "hour": 2,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.4833,
+      "volume": 3148390.96
     },
     {
       "dow": 4,
       "hour": 3,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.4333,
+      "volume": 2890532.07
     },
     {
       "dow": 4,
       "hour": 4,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.4333,
+      "volume": 3651341.77
     },
     {
       "dow": 4,
       "hour": 5,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.5167,
+      "volume": 2838003.48
     },
     {
       "dow": 4,
       "hour": 6,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5,
+      "volume": 2869470.43
     },
     {
       "dow": 4,
       "hour": 7,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5333,
+      "volume": 2914502.08
     },
     {
       "dow": 4,
       "hour": 8,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5,
+      "volume": 3784830.33
     },
     {
       "dow": 4,
       "hour": 9,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5167,
+      "volume": 3421156.96
     },
     {
       "dow": 4,
       "hour": 10,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.4833,
+      "volume": 3055244.71
     },
     {
       "dow": 4,
       "hour": 11,
       "count": 60,
-      "up_rate": 0.3833
+      "up_rate": 0.3833,
+      "volume": 3420655.0
     },
     {
       "dow": 4,
       "hour": 12,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5667,
+      "volume": 3322936.86
     },
     {
       "dow": 4,
       "hour": 13,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.6,
+      "volume": 3530074.19
     },
     {
       "dow": 4,
       "hour": 14,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.4667,
+      "volume": 4172242.32
     },
     {
       "dow": 4,
       "hour": 15,
       "count": 60,
-      "up_rate": 0.6167
+      "up_rate": 0.6,
+      "volume": 4819769.68
     },
     {
       "dow": 4,
       "hour": 16,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.55,
+      "volume": 5384784.79
     },
     {
       "dow": 4,
       "hour": 17,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.45,
+      "volume": 5470129.28
     },
     {
       "dow": 4,
       "hour": 18,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.4833,
+      "volume": 4800636.79
     },
     {
       "dow": 4,
       "hour": 19,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.4667,
+      "volume": 4225602.35
     },
     {
       "dow": 4,
       "hour": 20,
       "count": 60,
-      "up_rate": 0.5667
+      "up_rate": 0.5333,
+      "volume": 4424191.16
     },
     {
       "dow": 4,
       "hour": 21,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.5,
+      "volume": 3738187.71
     },
     {
       "dow": 4,
       "hour": 22,
       "count": 60,
-      "up_rate": 0.5833
+      "up_rate": 0.6167,
+      "volume": 2935932.97
     },
     {
       "dow": 4,
       "hour": 23,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.5,
+      "volume": 3772893.0
     },
     {
       "dow": 5,
       "hour": 0,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5167,
+      "volume": 3554607.78
     },
     {
       "dow": 5,
       "hour": 1,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5333,
+      "volume": 3390537.53
     },
     {
       "dow": 5,
       "hour": 2,
       "count": 60,
-      "up_rate": 0.5833
+      "up_rate": 0.5333,
+      "volume": 3832321.04
     },
     {
       "dow": 5,
       "hour": 3,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.45,
+      "volume": 3443793.17
     },
     {
       "dow": 5,
       "hour": 4,
       "count": 60,
-      "up_rate": 0.4333
+      "up_rate": 0.4667,
+      "volume": 2805286.75
     },
     {
       "dow": 5,
       "hour": 5,
-      "count": 59,
-      "up_rate": 0.5424
+      "count": 60,
+      "up_rate": 0.5333,
+      "volume": 2966715.25
     },
     {
       "dow": 5,
       "hour": 6,
       "count": 60,
-      "up_rate": 0.3167
+      "up_rate": 0.3333,
+      "volume": 3822451.05
     },
     {
       "dow": 5,
       "hour": 7,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.6167,
+      "volume": 3033612.14
     },
     {
       "dow": 5,
       "hour": 8,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.5667,
+      "volume": 3719599.74
     },
     {
       "dow": 5,
       "hour": 9,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.4833,
+      "volume": 3131736.13
     },
     {
       "dow": 5,
       "hour": 10,
       "count": 60,
-      "up_rate": 0.5833
+      "up_rate": 0.55,
+      "volume": 3262759.23
     },
     {
       "dow": 5,
       "hour": 11,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.4833,
+      "volume": 4705632.59
     },
     {
       "dow": 5,
       "hour": 12,
-      "count": 59,
-      "up_rate": 0.5424
+      "count": 60,
+      "up_rate": 0.4833,
+      "volume": 5275894.97
     },
     {
       "dow": 5,
       "hour": 13,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5,
+      "volume": 5714162.2
     },
     {
       "dow": 5,
       "hour": 14,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5167,
+      "volume": 6001550.98
     },
     {
       "dow": 5,
       "hour": 15,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5,
+      "volume": 5587846.18
     },
     {
       "dow": 5,
       "hour": 16,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.5833,
+      "volume": 5303058.25
     },
     {
       "dow": 5,
       "hour": 17,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5167,
+      "volume": 4788935.47
     },
     {
       "dow": 5,
       "hour": 18,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.5667,
+      "volume": 5534814.49
     },
     {
       "dow": 5,
       "hour": 19,
-      "count": 59,
-      "up_rate": 0.4746
+      "count": 60,
+      "up_rate": 0.4833,
+      "volume": 4826289.92
     },
     {
       "dow": 5,
       "hour": 20,
-      "count": 59,
-      "up_rate": 0.5763
+      "count": 60,
+      "up_rate": 0.5667,
+      "volume": 4541705.92
     },
     {
       "dow": 5,
       "hour": 21,
       "count": 60,
-      "up_rate": 0.6
+      "up_rate": 0.5667,
+      "volume": 5002338.96
     },
     {
       "dow": 5,
       "hour": 22,
       "count": 60,
-      "up_rate": 0.4
+      "up_rate": 0.4167,
+      "volume": 5364136.24
     },
     {
       "dow": 5,
       "hour": 23,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.4833,
+      "volume": 4832527.13
     },
     {
       "dow": 6,
       "hour": 0,
       "count": 60,
-      "up_rate": 0.45
+      "up_rate": 0.45,
+      "volume": 4754973.16
     },
     {
       "dow": 6,
       "hour": 1,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.5333,
+      "volume": 4567898.96
     },
     {
       "dow": 6,
       "hour": 2,
       "count": 60,
-      "up_rate": 0.4333
+      "up_rate": 0.45,
+      "volume": 4667795.27
     },
     {
       "dow": 6,
       "hour": 3,
       "count": 60,
-      "up_rate": 0.5833
+      "up_rate": 0.6167,
+      "volume": 5056154.49
     },
     {
       "dow": 6,
       "hour": 4,
       "count": 60,
-      "up_rate": 0.4167
+      "up_rate": 0.4333,
+      "volume": 4501432.53
     },
     {
       "dow": 6,
       "hour": 5,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.4667,
+      "volume": 4168744.65
     },
     {
       "dow": 6,
       "hour": 6,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.45,
+      "volume": 5080036.98
     },
     {
       "dow": 6,
       "hour": 7,
       "count": 60,
-      "up_rate": 0.4833
+      "up_rate": 0.5167,
+      "volume": 4171445.96
     },
     {
       "dow": 6,
       "hour": 8,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.5167,
+      "volume": 4692588.69
     },
     {
       "dow": 6,
       "hour": 9,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.5333,
+      "volume": 4491681.4
     },
     {
       "dow": 6,
       "hour": 10,
-      "count": 59,
-      "up_rate": 0.5085
+      "count": 60,
+      "up_rate": 0.55,
+      "volume": 5699903.01
     },
     {
       "dow": 6,
       "hour": 11,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.65,
+      "volume": 3569673.9
     },
     {
       "dow": 6,
       "hour": 12,
       "count": 60,
-      "up_rate": 0.4167
+      "up_rate": 0.5667,
+      "volume": 3416160.96
     },
     {
       "dow": 6,
       "hour": 13,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.6,
+      "volume": 3835441.32
     },
     {
       "dow": 6,
       "hour": 14,
       "count": 60,
-      "up_rate": 0.5333
+      "up_rate": 0.6833,
+      "volume": 4498241.28
     },
     {
       "dow": 6,
       "hour": 15,
       "count": 60,
-      "up_rate": 0.5167
+      "up_rate": 0.6833,
+      "volume": 4265069.33
     },
     {
       "dow": 6,
       "hour": 16,
       "count": 60,
-      "up_rate": 0.4333
+      "up_rate": 0.55,
+      "volume": 4743807.73
     },
     {
       "dow": 6,
       "hour": 17,
       "count": 60,
-      "up_rate": 0.5
+      "up_rate": 0.5833,
+      "volume": 4574300.74
     },
     {
       "dow": 6,
       "hour": 18,
       "count": 60,
-      "up_rate": 0.4667
+      "up_rate": 0.55,
+      "volume": 4810172.62
     },
     {
       "dow": 6,
       "hour": 19,
       "count": 60,
-      "up_rate": 0.55
+      "up_rate": 0.6,
+      "volume": 4464463.13
     },
     {
       "dow": 6,
       "hour": 20,
       "count": 60,
-      "up_rate": 0.3667
+      "up_rate": 0.5167,
+      "volume": 4492892.18
     },
     {
       "dow": 6,
       "hour": 21,
       "count": 57,
-      "up_rate": 0.5789
+      "up_rate": 0.6491,
+      "volume": 4485494.76
     },
     {
       "dow": 6,
       "hour": 22,
       "count": 48,
-      "up_rate": 0.5625
+      "up_rate": 0.6458,
+      "volume": 4128491.75
     },
     {
       "dow": 6,
       "hour": 23,
       "count": 48,
-      "up_rate": 0.4583
+      "up_rate": 0.4792,
+      "volume": 3838711.49
     }
   ],
   "days": [

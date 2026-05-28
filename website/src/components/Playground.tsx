@@ -2,7 +2,14 @@ import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import PriceChart, { type HistoricalSeries } from './PriceChart'
 import CalibrationPanel from './CalibrationPanel'
 import InfoTooltip from './InfoTooltip'
+import PlaygroundSetup, { type PlaygroundMode } from './PlaygroundSetup'
+import PlaygroundSummary from './PlaygroundSummary'
 import { lookupCalibration, type CalibrationLookup } from '../lib/calibration'
+
+// Hard cap on the number of markets a single session can replay (matches
+// the slider's upper bound). The actual cap is min(this, events.length).
+const SESSION_MAX = 50
+const STARTING_BALANCE = 100
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface SecondData {
@@ -37,9 +44,20 @@ interface GameState {
   balance: number
   upQty: number
   downQty: number
-  nTrades: number       // cumulative buy + sell count over the whole session
-  phase: 'loading' | 'playing' | 'resolved'
+  nTrades: number       // cumulative buy + sell count over the current session
+  // Session lifecycle:
+  //   loading  - waiting for the JSON to come back
+  //   config   - events loaded, user has not started a session yet (or just
+  //              clicked Restart / Play again). Setup overlay is on top.
+  //   playing  - active round, tick timer is running
+  //   resolved - round just ended, 3.5 s win/lose overlay before auto-advance
+  //   finished - the last round of the session has resolved. Summary
+  //              overlay is on top, content behind it is blurred
+  phase: 'loading' | 'config' | 'playing' | 'resolved' | 'finished'
   resolution: Resolution | null
+  // Session parameters chosen on the setup screen.
+  maxMarkets: number             // 5–SESSION_MAX (capped by events.length)
+  mode: PlaygroundMode           // blind / no-verdict / full
 }
 
 type Action =
@@ -48,19 +66,35 @@ type Action =
   | { type: 'buy'; dir: 'up' | 'down'; qty: number; price: number }
   | { type: 'sell'; dir: 'up' | 'down'; qty: number; price: number }
   | { type: 'next_market' }
+  | { type: 'start_session'; maxMarkets: number; mode: PlaygroundMode }
+  | { type: 'restart_to_config' }
+
+// Fisher-Yates: returns a freshly shuffled COPY so the original array
+// (and any external reference to it) stays untouched. Used by
+// `start_session` to randomise the play order every run.
+function shuffled<T>(arr: readonly T[]): T[] {
+  const out = arr.slice()
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
 
 // ── Reducer ──────────────────────────────────────────────────────────────────
 function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
 
     case 'init':
-      return { ...state, events: action.events, phase: 'playing' }
+      // Loaded events arrive: drop the user on the setup screen. We don't
+      // auto-start; the user picks the count and difficulty mode first.
+      return { ...state, events: action.events, phase: 'config' }
 
     case 'tick': {
       if (state.phase !== 'playing') return state
       const next = state.tick + 1
       if (next > 299) {
-        // Market over — resolve outcome from actual price movement
+        // Market over - resolve outcome from actual price movement
         const ev = state.events[state.gameIdx]
         const firstPrice = ev.seconds[0]?.btc_price ?? 0
         const lastPrice  = ev.seconds[ev.seconds.length - 1]?.btc_price ?? 0
@@ -109,13 +143,58 @@ function reducer(state: GameState, action: Action): GameState {
       }
     }
 
-    case 'next_market':
+    case 'next_market': {
+      // End of the bounded session: stop instead of looping back to idx 0.
+      // The summary overlay reads balance / nTrades / maxMarkets / mode
+      // from this same state, so we don't reset anything here.
+      const nextIdx = state.gameIdx + 1
+      if (nextIdx >= state.maxMarkets || nextIdx >= state.events.length) {
+        return { ...state, phase: 'finished', resolution: null }
+      }
       return {
         ...state,
-        gameIdx: (state.gameIdx + 1) % state.events.length,
+        gameIdx: nextIdx,
         tick: 0,
         phase: 'playing',
         resolution: null,
+      }
+    }
+
+    case 'start_session':
+      // Wipes prior session state (balance / qty / trades) so each run
+      // starts clean, and pins the chosen difficulty for the duration.
+      // The events pool is reshuffled here so two consecutive sessions
+      // never replay the same markets in the same order - keeps the
+      // experience fresh on Play again / Restart.
+      return {
+        ...state,
+        events: shuffled(state.events),
+        gameIdx: 0,
+        tick: 0,
+        balance: STARTING_BALANCE,
+        upQty: 0,
+        downQty: 0,
+        nTrades: 0,
+        resolution: null,
+        phase: 'playing',
+        maxMarkets: action.maxMarkets,
+        mode: action.mode,
+      }
+
+    case 'restart_to_config':
+      // Same wipe as start_session but lands on the config screen instead
+      // of playing. We keep `maxMarkets` and `mode` so the setup card
+      // remembers the user's last choice without forcing them to re-pick.
+      return {
+        ...state,
+        gameIdx: 0,
+        tick: 0,
+        balance: STARTING_BALANCE,
+        upQty: 0,
+        downQty: 0,
+        nTrades: 0,
+        resolution: null,
+        phase: 'config',
       }
 
     default:
@@ -125,9 +204,13 @@ function reducer(state: GameState, action: Action): GameState {
 
 const INITIAL: GameState = {
   events: [], gameIdx: 0, tick: 0,
-  balance: 100, upQty: 0, downQty: 0,
+  balance: STARTING_BALANCE, upQty: 0, downQty: 0,
   nTrades: 0,
   phase: 'loading', resolution: null,
+  // Default session: 20 markets, full insight. Same defaults the setup
+  // card lands on - so a user who clicks Start without touching the
+  // controls gets the pedagogical version.
+  maxMarkets: 20, mode: 'full',
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -183,15 +266,15 @@ function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: Trad
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 2000) }
 
   const handleBuy = () => {
-    if (!canBuy) { flash(cost > balance ? 'Insufficient balance' : 'Invalid quantity'); return }
+    if (!canBuy) { flash(cost > balance ? 'Not enough balance' : 'Enter a valid quantity'); return }
     onBuy(parsed); setQty(''); flash(`Bought ${fmt(parsed, 1)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
   }
   const handleSell = () => {
-    if (!canSell) { flash(parsed > held ? `Only ${fmt(held, 2)} tokens held` : 'Invalid quantity'); return }
+    if (!canSell) { flash(parsed > held ? `You only hold ${fmt(held, 2)} tokens` : 'Enter a valid quantity'); return }
     onSell(parsed); setQty(''); flash(`Sold ${fmt(parsed, 1)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
   }
   const handleSellAll = () => {
-    if (held <= 0) { flash('No tokens to sell'); return }
+    if (held <= 0) { flash('No tokens held'); return }
     onSell(held); setQty(''); flash(`Sold all ${fmt(held, 2)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
   }
 
@@ -309,14 +392,18 @@ export default function Playground() {
   const pnl = portfolioValue - 100
 
   const isResolved = state.phase === 'resolved'
-  const tradingDisabled = isResolved || state.phase === 'loading'
+  const isPlaying  = state.phase === 'playing'
+  // Trading is allowed only during an active round. The blurred preview
+  // frames (config / finished) sit behind a pointer-events-none overlay,
+  // but we belt-and-suspender the trade panel disabling too.
+  const tradingDisabled = !isPlaying
 
   const timeRemaining = data?.time_remaining ?? 300
   const mm = String(Math.floor(timeRemaining / 60)).padStart(2, '0')
   const ss = String(timeRemaining % 60).padStart(2, '0')
 
   // Live calibration readout: P(UP | T, ΔBTC) from historical data,
-  // both market-implied and realized — see scripts/export_calibration_lookup.py.
+  // both market-implied and realized - see scripts/export_calibration_lookup.py.
   const btcPctChange = data?.btc_pct_change ?? 0
   const calibPoint = useMemo(() => {
     if (!calibration) return null
@@ -324,8 +411,8 @@ export default function Playground() {
   }, [calibration, timeRemaining, btcPctChange])
 
   // Precompute the historical series (implied + realized) for every second of
-  // the current market. Recomputed only when the market or lookup changes —
-  // not on every tick — so it scales well.
+  // the current market. Recomputed only when the market or lookup changes -
+  // not on every tick - so it scales well.
   const historicalSeries: HistoricalSeries | null = useMemo(() => {
     if (!event || !calibration) return null
     const implied: (number | null)[] = []
@@ -350,8 +437,33 @@ export default function Playground() {
     )
   }
 
+  // Restart button is only meaningful while a session is in flight - we
+  // hide it on the config and finished screens (the user has a dedicated
+  // primary CTA there). Dispatched action wipes the session state but
+  // preserves the previously chosen mode/maxMarkets so the setup card
+  // stays on whatever the user picked last.
+  const canRestart = isPlaying || isResolved
   const speedControls = (
     <div className="flex items-center gap-2">
+      {canRestart && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'restart_to_config' })}
+          title="End this session and return to setup"
+          aria-label="Restart session"
+          // Amber outline + tinted fill so the button reads as
+          // "destructive but reversible" (matches the verdict's amber
+          // off-baseline accent) and stands out from the muted speed
+          // pills without being alarming red.
+          className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded border border-amber-400/50 bg-amber-400/10 text-xs font-semibold text-amber-300 hover:bg-amber-400/20 hover:text-amber-200 hover:border-amber-400/70 transition-colors"
+        >
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 8a6 6 0 1 1 1.8 4.3" />
+            <path d="M2 14v-4h4" />
+          </svg>
+          Restart
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setPaused(p => !p)}
@@ -375,7 +487,7 @@ export default function Playground() {
 
       <div className="flex items-center gap-1">
         <span className="text-xs text-muted mr-1">Speed:</span>
-        {[1, 3, 6, 10].map(s => (
+        {[1, 3, 6, 10, 20].map(s => (
           <button key={s} onClick={() => setSpeed(s)}
             className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
               speed === s ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white'
@@ -387,33 +499,57 @@ export default function Playground() {
     </div>
   )
 
+  // Phase-driven overlay state. In config/finished we render the playground
+  // content normally (so the blur reads as "this is what's waiting for you")
+  // but layer it under a backdrop-blur overlay holding the setup or summary
+  // card. Pointer-events are killed on the underlying content so the user
+  // can't sneak trades in from behind the blur.
+  const isConfig   = state.phase === 'config'
+  const isFinished = state.phase === 'finished'
+  const isOverlay  = isConfig || isFinished
+
+  // Cap the slider's upper bound at whatever ships in the JSON (normally
+  // 50). Avoids a slider that lets the user pick more markets than exist.
+  const maxAvailable = Math.min(SESSION_MAX, state.events.length)
+
+  // Calibration insight is gated by difficulty. In "blind" the entire
+  // section is dropped from the layout (no header, no card). In
+  // "no-verdict" the section is shown but the verdict + tuning panel
+  // inside it are hidden (probability + gap cards stay visible).
+  const showInsightSection = state.mode !== 'blind'
+  const showVerdict        = state.mode === 'full'
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="relative">
+      <div className={`flex flex-col gap-8 ${isOverlay ? 'pointer-events-none select-none' : ''}`}>
 
       {/* ── 1. Historical Prediction Insight ─────────────────────────────── */}
-      <section>
-        <SubSectionHeader
-          title="Historical Prediction Insight"
-          tooltip="Live readout from our calibration analysis of 9,181 historical BTC 5-min markets. Given the current time remaining and BTC price move since round open, what did similar past situations look like — and how does this market's pricing compare?"
-        />
-        {calibPoint
-          ? (
-            <CalibrationPanel
-              point={calibPoint}
-              liveImplied={yesPrice}
-              upQty={state.upQty}
-              downQty={state.downQty}
-              balance={state.balance}
-              remainingMarkets={Math.max(0, state.events.length - state.gameIdx)}
-            />
-          )
-          : (
-            <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted">
-              Loading historical calibration data…
-            </div>
-          )
-        }
-      </section>
+      {showInsightSection && (
+        <section>
+          <SubSectionHeader
+            title="Historical Prediction Insight"
+            tooltip="Live calibration readout from 9,181 historical BTC five-minute markets. When the live price agrees with the historical baseline, the price is a reliable guide. When it disagrees, the panel shows which side history favors."
+          />
+          {calibPoint
+            ? (
+              <CalibrationPanel
+                point={calibPoint}
+                liveImplied={yesPrice}
+                upQty={state.upQty}
+                downQty={state.downQty}
+                balance={state.balance}
+                remainingMarkets={Math.max(0, state.maxMarkets - state.gameIdx)}
+                showVerdict={showVerdict}
+              />
+            )
+            : (
+              <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted">
+                Loading historical calibration data…
+              </div>
+            )
+          }
+        </section>
+      )}
 
       {/* ── 2. Live market ───────────────────────────────────────────────── */}
       <section>
@@ -436,7 +572,7 @@ export default function Playground() {
           <div className="rounded-xl border border-border bg-surface-elevated p-4">
             <div className="text-xs text-muted mb-1">Time remaining</div>
             <div className="text-xl font-bold text-white font-mono tabular-nums">{mm}:{ss}</div>
-            <div className="text-xs text-muted mt-0.5">until resolution</div>
+            <div className="text-xs text-muted mt-0.5">until close</div>
           </div>
 
           {/* Market progress + slug (merged) */}
@@ -444,10 +580,10 @@ export default function Playground() {
             <div className="text-xs text-muted mb-1">Market</div>
             <div className="text-xl font-bold text-white tabular-nums">
               {state.gameIdx + 1}
-              <span className="text-muted text-base font-normal"> / {state.events.length}</span>
+              <span className="text-muted text-base font-normal"> / {state.maxMarkets}</span>
             </div>
             <div className="text-xs text-muted mt-0.5 font-mono truncate" title={event?.slug}>
-              {event?.slug ?? '—'}
+              {event?.slug ?? '-'}
             </div>
           </div>
         </div>
@@ -481,10 +617,10 @@ export default function Playground() {
                 )}
                 {state.resolution.loseTokens > 0 && (
                   <div className="text-red-400/70 text-sm mt-1">
-                    {fmt(state.resolution.loseTokens, 2)} losing tokens → $0
+                    {fmt(state.resolution.loseTokens, 2)} losing tokens expire at $0
                   </div>
                 )}
-                <div className="text-muted text-sm mt-3 animate-pulse">Next market starting…</div>
+                <div className="text-muted text-sm mt-3 animate-pulse">Loading next market…</div>
               </div>
             </div>
           )}
@@ -495,7 +631,7 @@ export default function Playground() {
       <section>
         <SubSectionHeader
           title="Your wallet & trading account"
-          tooltip="Your live portfolio and trading actions. The cards on top show your cash balance, open token positions, and total trade count. Buy or sell tokens at the live market price below — trades are disabled once the market resolves."
+          tooltip="Your live balance and open positions. Buy or sell tokens at the current market price. Trading closes once the round resolves."
         />
 
         {/* Portfolio strip */}
@@ -527,7 +663,7 @@ export default function Playground() {
           <div className="rounded-xl border border-border bg-surface-elevated p-4">
             <div className="text-xs text-muted mb-1">Trades</div>
             <div className="text-xl font-bold text-white tabular-nums">{state.nTrades}</div>
-            <div className="text-xs text-muted mt-0.5">total buy + sell</div>
+            <div className="text-xs text-muted mt-0.5">buys + sells this session</div>
           </div>
         </div>
 
@@ -550,6 +686,81 @@ export default function Playground() {
         </div>
       </section>
 
+      </div>
+
+      {/* ── Gating overlay (setup before play, summary after) ──────────────
+          Split into two stacked layers so we can fully blur the
+          playground AND get a soft, fluffy outer edge:
+            • Layer 1 (z-10): backdrop-blur + tint, intentionally sized
+              MUCH LARGER than the playground via a negative inset. The
+              mask gradient feathers the alpha to 0 well outside the
+              playground bounds, so what the user sees inside the
+              playground rectangle is the fully opaque middle of the
+              mask (= fully blurred), and only the halo outside the
+              playground softly dissolves into the page.
+            • Layer 2 (z-20): a transparent flex container holding the
+              setup or summary card. No mask, no blur, so the card is
+              always crisp regardless of where the backdrop is fading. */}
+      {isOverlay && (
+        <>
+          <div
+            aria-hidden
+            className="absolute z-10 backdrop-blur-lg bg-surface/60 pointer-events-none"
+            style={{
+              // Asymmetric extension constrained on the top and bottom
+              // so the blur never bleeds onto the SectionHeader above
+              // (only 2 rem of breathing room there) or the Footer
+              // below (the parent section's `pb-28` = 7 rem gives us a
+              // 5 rem safety belt to spend). Sides stay generous so the
+              // horizontal halo still feels soft.
+              top:    '-1.5rem',
+              right:  '-14rem',
+              bottom: '-5rem',
+              left:   '-14rem',
+              // Vertical mask: tight 2 % top fade and 5 % bottom fade
+              // so both fade regions live entirely inside their (small)
+              // extensions and don't dim the playground content itself.
+              // Horizontal mask: symmetric 12 % fade on each side -
+              // those still have 14 rem of runway, so the soft halo
+              // shows up where you can afford it. Composited with
+              // `intersect` to form the rectangular vignette. Both
+              // unprefixed and -webkit- properties are set for Safari.
+              WebkitMaskImage:
+                'linear-gradient(to bottom, transparent 0%, #000 2%, #000 95%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)',
+              WebkitMaskComposite: 'source-in',
+              maskImage:
+                'linear-gradient(to bottom, transparent 0%, #000 2%, #000 95%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)',
+              maskComposite: 'intersect',
+            }}
+          />
+          <div
+            className="absolute inset-0 z-20 flex items-start justify-center px-4 pt-12 sm:pt-20"
+            aria-modal="true"
+            role="dialog"
+          >
+            {isConfig && (
+              <PlaygroundSetup
+                maxAvailable={maxAvailable}
+                defaultMarkets={state.maxMarkets}
+                defaultMode={state.mode}
+                onStart={(maxMarkets, mode) =>
+                  dispatch({ type: 'start_session', maxMarkets, mode })
+                }
+              />
+            )}
+            {isFinished && (
+              <PlaygroundSummary
+                startingBalance={STARTING_BALANCE}
+                finalBalance={state.balance}
+                marketsPlayed={state.maxMarkets}
+                nTrades={state.nTrades}
+                mode={state.mode}
+                onPlayAgain={() => dispatch({ type: 'restart_to_config' })}
+              />
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

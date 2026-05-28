@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import InsightCallout from './layout/InsightCallout'
 
 interface Transitions { uu: number; ud: number; du: number; dd: number }
 interface Marginals   { up: number; down: number }
@@ -144,6 +145,12 @@ export default function MarkovDiagram() {
   const [running,  setRunning]  = useState(false)
   const [speed,    setSpeed]    = useState(500)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The simulation loop is driven by chained setTimeouts started in
+  // `startSim`, which closes over `speed` at start time. We mirror the
+  // latest speed into a ref so the loop reads the current value when
+  // scheduling its next tick - lets the user change speed mid-run.
+  const speedRef = useRef(speed)
+  useEffect(() => { speedRef.current = speed }, [speed])
 
   useEffect(() => {
     fetch('/data/markov.json').then(r => r.json()).then(setData)
@@ -165,9 +172,11 @@ export default function MarkovDiagram() {
       idx++
       if (idx >= path.length) { setRunning(false); setCursor(-1); return }
       setSimState(path[idx]); setCursor(idx)
-      timerRef.current = setTimeout(advance, speed)
+      // Re-read speedRef each time so speed changes take effect on the
+      // very next tick rather than waiting for a Reset → Start cycle.
+      timerRef.current = setTimeout(advance, speedRef.current)
     }
-    timerRef.current = setTimeout(advance, speed)
+    timerRef.current = setTimeout(advance, speedRef.current)
   }
 
   const resetSim = () => {
@@ -198,6 +207,12 @@ export default function MarkovDiagram() {
 
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Diagram card + its inline takeaway are wrapped together so the
+          parent's gap-6 only spaces them away from the streak histogram
+          below - the callout itself sits tight under the diagram with
+          just its own mt-3. */}
+      <div>
 
       {/* ── Diagram card ── */}
       <div className="rounded-xl border border-border bg-surface-elevated p-4">
@@ -268,7 +283,7 @@ export default function MarkovDiagram() {
             className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors ${
               running ? 'bg-slate-600 hover:bg-slate-500' : 'bg-accent hover:bg-blue-500'
             }`}>
-            {running ? '■ Stop' : '▶ Simulate 20 steps'}
+            {running ? '■ Stop' : '▶ Run 20 steps'}
           </button>
           {simPath.length > 0 && !running && (
             <button onClick={resetSim}
@@ -278,7 +293,7 @@ export default function MarkovDiagram() {
           )}
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-muted">Speed:</span>
-            {[{ms:1000,l:'slow'},{ms:500,l:'1×'},{ms:250,l:'2×'},{ms:100,l:'4×'}].map(s => (
+            {[{ms:500,l:'1×'},{ms:250,l:'2×'},{ms:100,l:'4×'}].map(s => (
               <button key={s.ms} onClick={() => setSpeed(s.ms)}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                   speed === s.ms ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white border border-border'
@@ -286,6 +301,20 @@ export default function MarkovDiagram() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Diagram-specific takeaway: the four arrows themselves. */}
+      <InsightCallout>
+        All four arrows land within <span className="text-white">~2 pp</span> of
+        50%. The largest deviation, DOWN → UP at{' '}
+        <span className="text-white">{(t.du * 100).toFixed(1)}%</span>, is a
+        mild mean-reversion blip well inside fair-coin sampling noise at this
+        sample size. UP → UP at{' '}
+        <span className="text-white">{(t.uu * 100).toFixed(1)}%</span> barely
+        moves the needle. Knowing the previous outcome gives you no edge on
+        the next one.
+      </InsightCallout>
+
       </div>
 
       {/* ── Streak histogram ── */}

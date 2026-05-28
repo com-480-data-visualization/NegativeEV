@@ -1,7 +1,7 @@
 // Lookup table + bilinear interpolation for the playground calibration panel.
 //
 // The lookup is produced by scripts/export_calibration_lookup.py and contains
-// 2D grids of P(UP | time_remaining, btc_pct_change) — both the empirical
+// 2D grids of P(UP | time_remaining, btc_pct_change) - both the empirical
 // `realized` value and the market-implied historical average.
 
 export interface CalibrationLookup {
@@ -13,7 +13,7 @@ export interface CalibrationLookup {
   smoothing: { sigma_t: number; sigma_y: number }
   realized: (number | null)[][]          // [t_idx][y_idx]
   implied: (number | null)[][]           // [t_idx][y_idx]
-  n_samples: number[][]                  // [t_idx][y_idx] — raw, unsmoothed
+  n_samples: number[][]                  // [t_idx][y_idx] - raw, unsmoothed
 }
 
 export type Confidence = 'high' | 'medium' | 'low' | 'none'

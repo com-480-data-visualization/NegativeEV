@@ -1,0 +1,164 @@
+{
+  "days": [
+    {
+      "date": "2026-02-12",
+      "volume_usd": 12757086.56,
+      "n_markets": 280
+    },
+    {
+      "date": "2026-02-13",
+      "volume_usd": 19810490.04,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-14",
+      "volume_usd": 23984357.32,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-15",
+      "volume_usd": 29402618.97,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-16",
+      "volume_usd": 31716171.0,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-17",
+      "volume_usd": 32764157.24,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-18",
+      "volume_usd": 33449042.59,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-19",
+      "volume_usd": 31761144.17,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-20",
+      "volume_usd": 33550808.6,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-21",
+      "volume_usd": 28777145.89,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-22",
+      "volume_usd": 24850548.48,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-23",
+      "volume_usd": 29147045.68,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-24",
+      "volume_usd": 28664306.03,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-25",
+      "volume_usd": 26210066.44,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-26",
+      "volume_usd": 26820593.81,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-27",
+      "volume_usd": 34208632.57,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-02-28",
+      "volume_usd": 32838584.09,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-01",
+      "volume_usd": 36146340.96,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-02",
+      "volume_usd": 41735958.49,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-03",
+      "volume_usd": 47463753.71,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-04",
+      "volume_usd": 36909714.06,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-05",
+      "volume_usd": 372286.29,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-06",
+      "volume_usd": 1327357.92,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-07",
+      "volume_usd": 1505333.82,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-08",
+      "volume_usd": 911706.85,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-09",
+      "volume_usd": 1078032.9,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-10",
+      "volume_usd": 1634984.57,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-11",
+      "volume_usd": 1199313.77,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-12",
+      "volume_usd": 1268749.1,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-13",
+      "volume_usd": 1183859.72,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-14",
+      "volume_usd": 17336891.99,
+      "n_markets": 288
+    },
+    {
+      "date": "2026-03-15",
+      "volume_usd": 15664361.02,
+      "n_markets": 261
+    }
+  ]
+}

@@ -74,13 +74,15 @@ Y_MIN, Y_MAX = -0.50, 0.40          # percent units, not decimals
 BUCKET_WIDTH_DEFAULT = 0.01          # percentage points; -0.50..+0.40 gives 91 thresholds
 TIME_STEP_DEFAULT = 5                # displayed time_remaining spacing in seconds
 
-# sigma_y=0: the directional tail formula is naturally monotone in Y — smoothing in Y
+# sigma_y=0: the directional tail formula is naturally monotone in Y - smoothing in Y
 # crosses the Y=0 boundary and mixes incompatible left-tail / right-tail counts.
 # sigma_t smooths across adjacent time steps to reduce per-step noise.
 SIGMA_Y = 0.0
 SIGMA_T = 3.0
 
-BG = "#0f172a"
+# Page background. Matches the website's `--color-surface-elevated`
+# so the iframe blends seamlessly into the card it sits in.
+BG = "#161922"
 
 ID_CANDIDATES = (
     "event_timestamp",   # common in this BTC dataset
@@ -576,8 +578,8 @@ def surface_payload(
         },
         "datasets": {
             "realized": {
-                "title": "Realized — P(UP | BTC move condition met at time T)",
-                "subtitle": "Y>0: P(UP|BTC Δ≥Y,T)  ·  Y<0: P(UP|BTC Δ≤Y,T)  ·  Gaussian-smoothed",
+                "title": "Realized P(UP)",
+                "subtitle": "How often UP actually wins when BTC has moved by Y at time T",
                 "zName": "Realized P(UP)",
                 "zMin": 0,
                 "zMax": 1,
@@ -589,8 +591,8 @@ def surface_payload(
                 ),
             },
             "implied": {
-                "title": "Implied — avg market-quoted P(UP | BTC move condition met at time T)",
-                "subtitle": "avg(implied_prob) over same directional matching set as realized",
+                "title": "Implied P(UP)",
+                "subtitle": "What the market was pricing UP at, in the same situation",
                 "zName": "Implied P(UP)",
                 "zMin": 0,
                 "zMax": 1,
@@ -602,8 +604,8 @@ def surface_payload(
                 ),
             },
             "gap": {
-                "title": "Calibration gap: realized − implied",
-                "subtitle": "Green = market under-prices UP  |  red = over-prices UP",
+                "title": "Calibration gap (realized − implied)",
+                "subtitle": "Blue = market under-prices UP  ·  red = market over-prices UP",
                 "zName": "Realized − Implied gap",
                 "zMin": -gap_range,
                 "zMax": gap_range,
@@ -631,12 +633,15 @@ def build_html(payload: dict) -> str:
   <style>
     :root {{
       --bg: {BG};
-      --panel: #111827;
-      --panel2: #1f2937;
+      /* Panel/border/accent picked to match the website tokens so the
+         iframe reads as a continuation of the parent card. */
+      --panel: #1f2330;
+      --panel2: #262b39;
       --text: #e5e7eb;
-      --muted: #94a3b8;
-      --border: #334155;
-      --accent: #38bdf8;
+      --muted: #9ca3af;
+      --border: #2a2f3d;
+      --accent: #c084fc;       /* violet-400 (matches --color-accent) */
+      --accent-strong: #d8b4fe;/* violet-300, used as active-button rim */
     }}
     html, body {{
       width: 100%;
@@ -659,7 +664,7 @@ def build_html(payload: dict) -> str:
       align-items: center;
       justify-content: space-between;
       padding: 12px 16px;
-      background: rgba(15, 23, 42, 0.96);
+      background: rgba(22, 25, 34, 0.96);
       border-bottom: 1px solid var(--border);
       box-sizing: border-box;
       z-index: 2;
@@ -699,8 +704,8 @@ def build_html(payload: dict) -> str:
     }}
     button:hover {{ border-color: var(--accent); }}
     button.active {{
-      background: #0ea5e9;
-      border-color: #7dd3fc;
+      background: var(--accent);
+      border-color: var(--accent-strong);
       color: white;
     }}
     #chart {{ width: 100%; height: 100%; }}
@@ -712,8 +717,8 @@ def build_html(payload: dict) -> str:
       padding: 8px 10px;
       font-size: 12px;
       color: var(--muted);
-      background: rgba(15, 23, 42, 0.74);
-      border: 1px solid rgba(51, 65, 85, 0.8);
+      background: rgba(22, 25, 34, 0.74);
+      border: 1px solid rgba(42, 47, 61, 0.8);
       border-radius: 10px;
       pointer-events: none;
     }}
@@ -759,7 +764,7 @@ def build_html(payload: dict) -> str:
 
     function colorsFor(ds) {{
       if (ds.palette === 'gap') {{
-        // blue (under-pricing) → deep violet (neutral) → red (over-pricing) — no white so structure is visible
+        // blue (under-pricing) → deep violet (neutral) → red (over-pricing) - no white so structure is visible
         return ['#1d4ed8', '#7c3aed', '#dc2626'];
       }}
       // red (P=0) → amber → green (P=1): traffic-light for cumulative UP probability
@@ -782,9 +787,9 @@ def build_html(payload: dict) -> str:
       const i = currentMode === 'implied';
       const g = currentMode === 'gap';
 
-      const realFmt = isFinite(realized) ? fmt4(realized) : '—';
-      const implFmt = isFinite(implied)  ? fmt4(implied)  : '—';
-      const gapFmt  = isFinite(gap)      ? fmtSigned4(gap) : '—';
+      const realFmt = isFinite(realized) ? fmt4(realized) : '-';
+      const implFmt = isFinite(implied)  ? fmt4(implied)  : '-';
+      const gapFmt  = isFinite(gap)      ? fmtSigned4(gap) : '-';
 
       // Show the directional condition
       const yFmt = fmtPct(y);
@@ -816,7 +821,7 @@ def build_html(payload: dict) -> str:
       const ds = PAYLOAD.datasets[mode];
       const colors = colorsFor(ds);
       const titleText = ds.title;
-      const subtitleText = `${{ds.subtitle}} · implied universe: ${{PAYLOAD.meta.impliedUniverse}}`;
+      const subtitleText = ds.subtitle;
       document.getElementById('title').textContent = titleText;
       document.getElementById('subtitle').textContent = subtitleText;
 
@@ -828,8 +833,8 @@ def build_html(payload: dict) -> str:
           show: true,
           trigger: 'item',
           confine: true,
-          backgroundColor: 'rgba(15, 23, 42, 0.96)',
-          borderColor: '#475569',
+          backgroundColor: 'rgba(22, 25, 34, 0.96)',
+          borderColor: '#2a2f3d',
           textStyle: {{ color: '#e5e7eb', fontSize: 12 }},
           formatter: tooltipFormatter,
         }},
@@ -893,7 +898,10 @@ def build_html(payload: dict) -> str:
             autoRotate: false,
             alpha: 26,
             beta: -42,
-            distance: 220,
+            // Pulled back from the original 220 so the three axis
+            // titles (Time remaining / BTC Δ threshold / Z name) sit
+            // inside the viewport at the default zoom level.
+            distance: 290,
             minDistance: 80,
             maxDistance: 420,
           }},
@@ -974,7 +982,7 @@ def print_self_check(
     mean_per_bucket = float(Z_all_count[Z_all_count > 0].mean()) if np.any(Z_all_count > 0) else 0
     print(f"  Mean markets per non-empty bucket: {mean_per_bucket:.1f}")
     if mean_per_bucket < 5:
-        print("  NOTE: data is sparse per bucket — smoothing provides most of the density.")
+        print("  NOTE: data is sparse per bucket - smoothing provides most of the density.")
 
 
 # ---------------------------------------------------------------------------

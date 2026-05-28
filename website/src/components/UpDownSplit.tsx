@@ -6,11 +6,11 @@ interface Props {
   pUp: number | null
 }
 
-const fmtPct = (v: number | null) => v == null ? '—' : `${(v * 100).toFixed(1)}%`
+const fmtPct = (v: number | null) => v == null ? '-' : `${(v * 100).toFixed(1)}%`
 
 export default function UpDownSplit({ pUp }: Props) {
   if (pUp == null) {
-    return <div className="text-xl font-bold text-white tabular-nums">—</div>
+    return <div className="text-xl font-bold text-white tabular-nums">-</div>
   }
   const pDown = 1 - pUp
   return (

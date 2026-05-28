@@ -1,0 +1,13 @@
+{
+  "total_markets": 9181,
+  "total_volume_usd": 686451444.64,
+  "days_of_data": 32,
+  "up_rate": 0.514,
+  "n_up": 4719,
+  "n_down": 4462,
+  "date_range": {
+    "start": "2026-02-12",
+    "end": "2026-03-15",
+    "label": "Feb 12, 2026 \u2013 Mar 15, 2026"
+  }
+}

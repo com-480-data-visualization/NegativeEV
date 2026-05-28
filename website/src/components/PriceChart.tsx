@@ -19,9 +19,9 @@ interface Props {
 }
 
 const PAD = { top: 44, bottom: 28, left: 60, right: 130 }
-const ACCENT = '#c084fc'       // live implied — project accent violet
-const SKY = '#38bdf8'          // historical implied — sky blue
-const AMBER = '#fbbf24'        // historical realized — amber
+const ACCENT = '#c084fc'       // live implied - project accent violet
+const SKY = '#38bdf8'          // historical implied - sky blue
+const AMBER = '#fbbf24'        // historical realized - amber
 
 // Min vertical gap between right-side current-value labels.
 const LABEL_MIN_GAP = 26
@@ -75,7 +75,7 @@ export default function PriceChart({ seconds, historical, currentSecond }: Props
   const H = 260
 
   // Visibility toggles for each curve. The user cannot hide all of them.
-  // Only BTC change is shown by default — the user opts in to the probability
+  // Only BTC change is shown by default - the user opts in to the probability
   // overlays to avoid overwhelming the first view.
   const [visible, setVisible] = useState({
     btc: true,
@@ -408,7 +408,7 @@ function LabelPair({ cx, cy, color, main, sub }: {
 }
 
 // ── Legend toggle button ───────────────────────────────────────────────────
-// MUST live at module scope (not inside PriceChart) — defining it in the
+// MUST live at module scope (not inside PriceChart) - defining it in the
 // component body would create a fresh function reference on every tick,
 // which React treats as a different component type and unmount/remount-s
 // each button, causing visible blinks and a brief un-clickable window.

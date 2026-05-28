@@ -25,7 +25,7 @@ data/raw/
 Thumbs.db
 desktop.ini
 
-# Generated plot files (old Plotly outputs — superseded by ECharts)
+# Generated plot files (old Plotly outputs - superseded by ECharts)
 docs/surface_*.html
 
 # Node / frontend

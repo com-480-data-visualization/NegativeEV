@@ -1,4 +1,4 @@
-# NegativeEV — Plot Generation & Data Pipeline
+# NegativeEV - Plot Generation & Data Pipeline
 
 This document explains every script, data file, and the exact commands needed to
 reproduce all plots. Run all commands from the **repository root**.
@@ -30,7 +30,7 @@ Python dependencies (see `requirements.txt`): `pandas`, `numpy`, `scipy`,
 
 ### 1. `scripts/build_cumulative_surface_html.py`
 
-Generates `docs/up_cumulative_echarts3d.html` — the interactive 3D calibration
+Generates `docs/up_cumulative_echarts3d.html` - the interactive 3D calibration
 surface embedded in Section 1 of the website.
 
 **What it computes:**
@@ -97,12 +97,12 @@ python scripts/build_cumulative_surface_html.py \
 sigma_y must be 0: Y-direction smoothing crosses the Y=0 boundary and mixes
 incompatible left-tail / right-tail counts, which dilutes probabilities near Y=0
 (e.g. pulling P(UP | BTC Δ ≥ +0.05%, T=5s) from 98.9% down to ~80%).
-The directional tail counts are naturally monotone in Y — no Y smoothing needed.
+The directional tail counts are naturally monotone in Y - no Y smoothing needed.
 
 **Variants:**
 
 ```bash
-# Completely raw (no smoothing at all — noisy in time direction)
+# Completely raw (no smoothing at all - noisy in time direction)
 python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 0
 
 # Finer time resolution (slower, larger HTML)
@@ -120,7 +120,7 @@ python scripts/build_cumulative_surface_html.py --sigma-y 0 --sigma-t 3.0 --skip
 
 Generates three JSON files used by the website's Block B and Block C sections.
 Uses **all 9,175 markets** (6 exact-tie events dropped). Classifies UP/DOWN from
-actual first-vs-last BTC price — not `winner_binary` — to stay consistent with
+actual first-vs-last BTC price - not `winner_binary` - to stay consistent with
 what users see in the trading playground.
 
 **Command:**
@@ -188,9 +188,9 @@ python scripts/export_playground_events.py
 
 | Website section | Data source | Script |
 |---|---|---|
-| Hero stats (9,181 / 51.4% / …) | Hardcoded from dataset EDA | — |
-| Section 1 — Calibration surface | `docs/up_cumulative_echarts3d.html` | `build_cumulative_surface_html.py` |
-| Section 2 — BTC Δ histogram | `website/public/data/btc_distribution.json` | `build_analysis_data.py` |
-| Section 2 — Hourly heatmap | `website/public/data/hourly_heatmap.json` | `build_analysis_data.py` |
-| Section 3 — Markov chain | `website/public/data/markov.json` | `build_analysis_data.py` |
-| Section 4 — Trading playground | `website/public/data/playground_events.json` | `export_playground_events.py` |
+| Hero stats (9,181 / 51.4% / …) | Hardcoded from dataset EDA | - |
+| Section 1 - Calibration surface | `docs/up_cumulative_echarts3d.html` | `build_cumulative_surface_html.py` |
+| Section 2 - BTC Δ histogram | `website/public/data/btc_distribution.json` | `build_analysis_data.py` |
+| Section 2 - Hourly heatmap | `website/public/data/hourly_heatmap.json` | `build_analysis_data.py` |
+| Section 3 - Markov chain | `website/public/data/markov.json` | `build_analysis_data.py` |
+| Section 4 - Trading playground | `website/public/data/playground_events.json` | `export_playground_events.py` |

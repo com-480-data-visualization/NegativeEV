@@ -35,7 +35,7 @@ OUT_JSON = ROOT / "website/public/data/calibration_lookup.json"
 
 # ── Grid configuration ──────────────────────────────────────────────────────
 MARKET_SECONDS = 300
-T_STEP = 5                       # seconds — grid every 5s of time_remaining
+T_STEP = 5                       # seconds - grid every 5s of time_remaining
 Y_MIN, Y_MAX = -0.60, 0.60       # percentage points (BTC pct change since open)
 Y_STEP = 0.01                    # percentage point bucket width
 
@@ -120,7 +120,7 @@ def main() -> None:
     work["t_idx"] = (work["time_remaining"] // T_STEP).astype(np.int32)
 
     # ── Aggregations ────────────────────────────────────────────────────────
-    # realized aggregation (uses winner_binary — always finite after cleaning)
+    # realized aggregation (uses winner_binary - always finite after cleaning)
     real_grp = work.groupby(["t_idx", "y_idx"], sort=False)[WINNER_COL].agg(["sum", "count"])
     real_sum = np.zeros((len(t_grid), len(y_grid)), dtype=np.float64)
     real_cnt = np.zeros_like(real_sum)
@@ -159,7 +159,7 @@ def main() -> None:
         realized = np.where(real_cnt_s > 0, real_sum_s / real_cnt_s, np.nan)
         implied = np.where(impl_cnt_s > 0, impl_sum_s / impl_cnt_s, np.nan)
 
-    # ── Masking — use raw counts for the n_samples gate ─────────────────────
+    # ── Masking - use raw counts for the n_samples gate ─────────────────────
     raw_n = real_cnt.astype(np.int64)
     insufficient = raw_n < N_MIN
     realized[insufficient] = np.nan
