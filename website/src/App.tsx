@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Playground from './components/Playground'
 import BtcDistributionChart from './components/BtcDistributionChart'
 import HeatmapChart from './components/HeatmapChart'
@@ -95,7 +95,7 @@ function PlotFrame({ src, title, height = 680 }: PlotFrameProps) {
 interface SectionHeaderProps {
   eyebrow?: string
   title: string
-  description: string
+  description: ReactNode
 }
 
 function SectionHeader({ eyebrow, title, description }: SectionHeaderProps) {
@@ -225,9 +225,16 @@ export default function App() {
           eyebrow="Interactive · Section 4"
           title="Trading playground"
           description={
-            `Replay 50 real BTC 5-minute markets sequentially. Buy and sell UP / DOWN tokens ` +
-            `at live market prices. At the end of each 5-minute window the winning side pays out $1 ` +
-            `per token — the other side pays $0. Your balance carries over between rounds.`
+            <>
+              You start with <span className="font-semibold text-white">$100</span>. Replay 50 real Polymarket
+              BTC 5-minute markets sequentially. Buy <span className="font-semibold text-green-400">↑ UP</span>{' '}
+              tokens if you think BTC will be higher at the round's end,{' '}
+              <span className="font-semibold text-red-400">↓ DOWN</span> if you think lower. At resolution, the
+              winning side pays <span className="font-semibold text-white">$1</span> per token, the losing side
+              pays <span className="font-semibold text-white">$0</span>. Your balance carries over between rounds.
+              Use the <span className="font-semibold text-accent">Historical Prediction Insight</span> panel below to spot
+              zones where the market historically over- or under-prices outcomes.
+            </>
           }
         />
         <Playground />

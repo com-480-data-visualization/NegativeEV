@@ -1,5 +1,8 @@
-import { useEffect, useReducer, useState } from 'react'
-import PriceChart from './PriceChart'
+import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
+import PriceChart, { type HistoricalSeries } from './PriceChart'
+import CalibrationPanel from './CalibrationPanel'
+import InfoTooltip from './InfoTooltip'
+import { lookupCalibration, type CalibrationLookup } from '../lib/calibration'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface SecondData {
@@ -34,6 +37,7 @@ interface GameState {
   balance: number
   upQty: number
   downQty: number
+  nTrades: number       // cumulative buy + sell count over the whole session
   phase: 'loading' | 'playing' | 'resolved'
   resolution: Resolution | null
 }
@@ -88,6 +92,7 @@ function reducer(state: GameState, action: Action): GameState {
         balance: state.balance - cost,
         upQty:   action.dir === 'up'   ? state.upQty   + action.qty : state.upQty,
         downQty: action.dir === 'down' ? state.downQty + action.qty : state.downQty,
+        nTrades: state.nTrades + 1,
       }
     }
 
@@ -100,6 +105,7 @@ function reducer(state: GameState, action: Action): GameState {
         balance: state.balance + action.qty * action.price,
         upQty:   action.dir === 'up'   ? state.upQty   - action.qty : state.upQty,
         downQty: action.dir === 'down' ? state.downQty - action.qty : state.downQty,
+        nTrades: state.nTrades + 1,
       }
     }
 
@@ -120,6 +126,7 @@ function reducer(state: GameState, action: Action): GameState {
 const INITIAL: GameState = {
   events: [], gameIdx: 0, tick: 0,
   balance: 100, upQty: 0, downQty: 0,
+  nTrades: 0,
   phase: 'loading', resolution: null,
 }
 
@@ -128,6 +135,27 @@ function fmt(n: number, d = 2) { return n.toFixed(d) }
 function fmtUSD(n: number) {
   const s = Math.abs(n).toFixed(2)
   return (n >= 0 ? '+$' : '-$') + s
+}
+
+// ── Sub-section header ───────────────────────────────────────────────────────
+// Used INSIDE the playground only. The uppercase tracking-widest accent eyebrow
+// is reserved for the page-level sections in App.tsx (Calibration, Playground).
+interface SubSectionHeaderProps {
+  title: string
+  tooltip?: string
+  right?: ReactNode
+}
+
+function SubSectionHeader({ title, tooltip, right }: SubSectionHeaderProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-border/60">
+      <h3 className="text-base font-semibold text-white flex items-center">
+        <span>{title}</span>
+        {tooltip && <InfoTooltip text={tooltip} />}
+      </h3>
+      {right}
+    </div>
+  )
 }
 
 // ── Trade panel ──────────────────────────────────────────────────────────────
@@ -150,6 +178,7 @@ function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: Trad
   const cost   = valid ? parsed * price : 0
   const canBuy = valid && cost <= balance
   const canSell = valid && parsed <= held
+  const maxBuy = price > 0 ? Math.floor(balance / price) : 0
 
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 2000) }
 
@@ -178,7 +207,6 @@ function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: Trad
         <span className={`font-semibold text-sm ${accent}`}>{isUp ? '↑ UP' : '↓ DOWN'} token</span>
         <span className="text-xs text-muted">Price: <span className="text-white font-mono">${fmt(price, 4)}</span></span>
       </div>
-      <div className="text-xs text-muted">Held: <span className="text-white">{fmt(held, 2)}</span> tokens</div>
 
       {/* Quantity input + quick presets */}
       <div className="flex gap-2">
@@ -188,18 +216,27 @@ function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: Trad
           disabled={disabled}
           className="flex-1 min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white placeholder-muted focus:outline-none focus:border-accent disabled:opacity-40"
         />
-        {[1, 10, 100].map(n => (
+        {[10, 100].map(n => (
           <button key={n} onClick={() => setQty(String(n))} disabled={disabled}
             className="px-2 py-1 rounded-lg border border-border bg-surface text-xs text-muted hover:text-white hover:border-accent transition-colors disabled:opacity-30 shrink-0">
             {n}
           </button>
         ))}
+        <button
+          onClick={() => setQty(String(maxBuy))}
+          disabled={disabled || maxBuy <= 0}
+          title={`Max tokens you can buy at $${fmt(price, 4)}: ${maxBuy}`}
+          className="px-2 py-1 rounded-lg border border-border bg-surface text-xs text-muted hover:text-white hover:border-accent transition-colors disabled:opacity-30 shrink-0"
+        >
+          max
+        </button>
       </div>
 
       {valid && (
         <div className="text-xs text-muted">
           Cost: <span className="text-white">${fmt(cost, 2)}</span>
-          {' · '}Receive: <span className="text-white">${fmt(parsed * price, 2)}</span>
+          {' · '}Payout: <span className={accent}>${fmt(parsed, 2)}</span>
+          <span className="text-muted/70"> if {isUp ? '↑ UP' : '↓ DOWN'} wins</span>
         </div>
       )}
 
@@ -227,6 +264,8 @@ function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: Trad
 export default function Playground() {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const [speed, setSpeed] = useState(3)   // 1x = 1 tick/s, 3x default
+  const [paused, setPaused] = useState(false)
+  const [calibration, setCalibration] = useState<CalibrationLookup | null>(null)
 
   // Load events
   useEffect(() => {
@@ -236,12 +275,20 @@ export default function Playground() {
       .catch(e => console.error('Failed to load playground events', e))
   }, [])
 
+  // Load calibration lookup table
+  useEffect(() => {
+    fetch('/data/calibration_lookup.json')
+      .then(r => r.json())
+      .then(setCalibration)
+      .catch(e => console.error('Failed to load calibration lookup', e))
+  }, [])
+
   // Tick timer
   useEffect(() => {
-    if (state.phase !== 'playing') return
+    if (state.phase !== 'playing' || paused) return
     const id = setInterval(() => dispatch({ type: 'tick' }), 1000 / speed)
     return () => clearInterval(id)
-  }, [state.phase, state.gameIdx, speed])
+  }, [state.phase, state.gameIdx, speed, paused])
 
   // Auto-advance after resolution
   useEffect(() => {
@@ -268,6 +315,29 @@ export default function Playground() {
   const mm = String(Math.floor(timeRemaining / 60)).padStart(2, '0')
   const ss = String(timeRemaining % 60).padStart(2, '0')
 
+  // Live calibration readout: P(UP | T, ΔBTC) from historical data,
+  // both market-implied and realized — see scripts/export_calibration_lookup.py.
+  const btcPctChange = data?.btc_pct_change ?? 0
+  const calibPoint = useMemo(() => {
+    if (!calibration) return null
+    return lookupCalibration(calibration, timeRemaining, btcPctChange)
+  }, [calibration, timeRemaining, btcPctChange])
+
+  // Precompute the historical series (implied + realized) for every second of
+  // the current market. Recomputed only when the market or lookup changes —
+  // not on every tick — so it scales well.
+  const historicalSeries: HistoricalSeries | null = useMemo(() => {
+    if (!event || !calibration) return null
+    const implied: (number | null)[] = []
+    const realized: (number | null)[] = []
+    for (const s of event.seconds) {
+      const p = lookupCalibration(calibration, s.time_remaining, s.btc_pct_change)
+      implied.push(p.implied)
+      realized.push(p.realized)
+    }
+    return { implied, realized }
+  }, [event, calibration])
+
   if (state.phase === 'loading') {
     return (
       <div className="flex items-center justify-center h-64 text-muted text-sm gap-2">
@@ -280,115 +350,205 @@ export default function Playground() {
     )
   }
 
+  const speedControls = (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setPaused(p => !p)}
+        aria-label={paused ? 'Resume' : 'Pause'}
+        title={paused ? 'Resume' : 'Pause'}
+        className="inline-flex items-center justify-center w-7 h-7 rounded bg-surface-elevated text-gray-200 hover:text-white hover:bg-accent transition-colors"
+      >
+        {paused ? (
+          // Play icon
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+            <path d="M0 0 L10 6 L0 12 Z" />
+          </svg>
+        ) : (
+          // Pause icon
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+            <rect x="0" y="0" width="3" height="12" />
+            <rect x="7" y="0" width="3" height="12" />
+          </svg>
+        )}
+      </button>
+
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-muted mr-1">Speed:</span>
+        {[1, 3, 6, 10].map(s => (
+          <button key={s} onClick={() => setSpeed(s)}
+            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+              speed === s ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white'
+            }`}>
+            {s}×
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
 
-      {/* ── Header bar ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Balance */}
-        <div className="rounded-xl border border-border bg-surface-elevated p-4">
-          <div className="text-xs text-muted mb-1">Balance</div>
-          <div className="text-xl font-bold text-white">${fmt(state.balance, 2)}</div>
-          <div className={`text-xs font-medium mt-0.5 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {fmtUSD(pnl)} P&L
-          </div>
-        </div>
+      {/* ── 1. Historical Prediction Insight ─────────────────────────────── */}
+      <section>
+        <SubSectionHeader
+          title="Historical Prediction Insight"
+          tooltip="Live readout from our calibration analysis of 9,181 historical BTC 5-min markets. Given the current time remaining and BTC price move since round open, what did similar past situations look like — and how does this market's pricing compare?"
+        />
+        {calibPoint
+          ? (
+            <CalibrationPanel
+              point={calibPoint}
+              liveImplied={yesPrice}
+              upQty={state.upQty}
+              downQty={state.downQty}
+              balance={state.balance}
+              remainingMarkets={Math.max(0, state.events.length - state.gameIdx)}
+            />
+          )
+          : (
+            <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted">
+              Loading historical calibration data…
+            </div>
+          )
+        }
+      </section>
 
-        {/* UP tokens */}
-        <div className="rounded-xl border border-green-400/20 bg-green-400/5 p-4">
-          <div className="text-xs text-muted mb-1">↑ UP tokens</div>
-          <div className="text-xl font-bold text-white">{fmt(state.upQty, 2)}</div>
-          <div className="text-xs text-muted mt-0.5">≈ ${fmt(state.upQty * yesPrice, 2)}</div>
-        </div>
+      {/* ── 2. Live market ───────────────────────────────────────────────── */}
+      <section>
+        <SubSectionHeader title="Live market" right={speedControls} />
 
-        {/* DOWN tokens */}
-        <div className="rounded-xl border border-red-400/20 bg-red-400/5 p-4">
-          <div className="text-xs text-muted mb-1">↓ DOWN tokens</div>
-          <div className="text-xl font-bold text-white">{fmt(state.downQty, 2)}</div>
-          <div className="text-xs text-muted mt-0.5">≈ ${fmt(state.downQty * noPrice, 2)}</div>
-        </div>
-
-        {/* Market info */}
-        <div className="rounded-xl border border-border bg-surface-elevated p-4">
-          <div className="text-xs text-muted mb-1">Time remaining</div>
-          <div className="text-xl font-bold text-white font-mono">{mm}:{ss}</div>
-          <div className="text-xs text-muted mt-0.5">
-            Market {state.gameIdx + 1} / {state.events.length}
-          </div>
-        </div>
-      </div>
-
-      {/* ── BTC price info ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 px-1 text-sm text-muted">
-        <span>BTC <span className="text-white font-mono">${btcPrice.toLocaleString('en', { maximumFractionDigits: 2 })}</span></span>
-        {event && (
-          <span className="text-xs text-muted/60 truncate">{event.slug}</span>
-        )}
-        {/* Speed control */}
-        <div className="ml-auto flex items-center gap-1">
-          <span className="text-xs mr-1">Speed:</span>
-          {[1, 3, 6, 10].map(s => (
-            <button key={s} onClick={() => setSpeed(s)}
-              className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                speed === s ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white'
-              }`}>
-              {s}×
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Live chart ──────────────────────────────────────────────────────── */}
-      <div className="relative rounded-2xl border border-border bg-surface-elevated px-4 pt-4 pb-2">
-        {event && (
-          <PriceChart seconds={event.seconds} currentSecond={state.tick} />
-        )}
-
-        {/* Resolution overlay */}
-        {isResolved && state.resolution && (
-          <div className="absolute inset-0 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(15,17,23,0.88)', backdropFilter: 'blur(4px)' }}>
-            <div className="text-center">
-              <div className={`text-4xl font-bold mb-2 ${
-                state.resolution.winner === 'UP' ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {state.resolution.winner === 'UP' ? '↑ UP' : '↓ DOWN'} wins!
-              </div>
-              {state.resolution.winTokens > 0 ? (
-                <div className="text-white text-lg">
-                  {fmt(state.resolution.winTokens, 2)} tokens → <span className="text-green-400 font-bold">${fmt(state.resolution.payout, 2)}</span>
-                </div>
-              ) : (
-                <div className="text-muted">No winning tokens held</div>
-              )}
-              {state.resolution.loseTokens > 0 && (
-                <div className="text-red-400/70 text-sm mt-1">
-                  {fmt(state.resolution.loseTokens, 2)} losing tokens → $0
-                </div>
-              )}
-              <div className="text-muted text-sm mt-3 animate-pulse">Next market starting…</div>
+        {/* Market meta strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          {/* BTC price */}
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            <div className="text-xs text-muted mb-1">BTC price</div>
+            <div className="text-xl font-bold text-white font-mono tabular-nums">
+              ${btcPrice.toLocaleString('en', { maximumFractionDigits: 2 })}
+            </div>
+            <div className={`text-xs font-medium mt-0.5 ${btcPctChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {btcPctChange >= 0 ? '+' : ''}{(btcPctChange).toFixed(3)}% since open
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── Trade panels ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TradePanel
-          dir="up" price={yesPrice}
-          balance={state.balance} held={state.upQty}
-          disabled={tradingDisabled}
-          onBuy={qty => dispatch({ type: 'buy',  dir: 'up', qty, price: yesPrice })}
-          onSell={qty => dispatch({ type: 'sell', dir: 'up', qty, price: yesPrice })}
+          {/* Time remaining */}
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            <div className="text-xs text-muted mb-1">Time remaining</div>
+            <div className="text-xl font-bold text-white font-mono tabular-nums">{mm}:{ss}</div>
+            <div className="text-xs text-muted mt-0.5">until resolution</div>
+          </div>
+
+          {/* Market progress + slug (merged) */}
+          <div className="rounded-xl border border-border bg-surface-elevated p-4 min-w-0">
+            <div className="text-xs text-muted mb-1">Market</div>
+            <div className="text-xl font-bold text-white tabular-nums">
+              {state.gameIdx + 1}
+              <span className="text-muted text-base font-normal"> / {state.events.length}</span>
+            </div>
+            <div className="text-xs text-muted mt-0.5 font-mono truncate" title={event?.slug}>
+              {event?.slug ?? '—'}
+            </div>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="relative rounded-2xl border border-border bg-surface-elevated px-4 pt-4 pb-2">
+          {event && (
+            <PriceChart
+              seconds={event.seconds}
+              historical={historicalSeries}
+              currentSecond={state.tick}
+            />
+          )}
+
+          {/* Resolution overlay */}
+          {isResolved && state.resolution && (
+            <div className="absolute inset-0 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(15,17,23,0.88)', backdropFilter: 'blur(4px)' }}>
+              <div className="text-center">
+                <div className={`text-4xl font-bold mb-2 ${
+                  state.resolution.winner === 'UP' ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {state.resolution.winner === 'UP' ? '↑ UP' : '↓ DOWN'} wins!
+                </div>
+                {state.resolution.winTokens > 0 ? (
+                  <div className="text-white text-lg">
+                    {fmt(state.resolution.winTokens, 2)} tokens → <span className="text-green-400 font-bold">${fmt(state.resolution.payout, 2)}</span>
+                  </div>
+                ) : (
+                  <div className="text-muted">No winning tokens held</div>
+                )}
+                {state.resolution.loseTokens > 0 && (
+                  <div className="text-red-400/70 text-sm mt-1">
+                    {fmt(state.resolution.loseTokens, 2)} losing tokens → $0
+                  </div>
+                )}
+                <div className="text-muted text-sm mt-3 animate-pulse">Next market starting…</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── 3. Wallet & trading (wallet strip + trade panels) ─────────────── */}
+      <section>
+        <SubSectionHeader
+          title="Your wallet & trading account"
+          tooltip="Your live portfolio and trading actions. The cards on top show your cash balance, open token positions, and total trade count. Buy or sell tokens at the live market price below — trades are disabled once the market resolves."
         />
-        <TradePanel
-          dir="down" price={noPrice}
-          balance={state.balance} held={state.downQty}
-          disabled={tradingDisabled}
-          onBuy={qty => dispatch({ type: 'buy',  dir: 'down', qty, price: noPrice })}
-          onSell={qty => dispatch({ type: 'sell', dir: 'down', qty, price: noPrice })}
-        />
-      </div>
+
+        {/* Portfolio strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          {/* Balance */}
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            <div className="text-xs text-muted mb-1">Balance</div>
+            <div className="text-xl font-bold text-white tabular-nums">${fmt(state.balance, 2)}</div>
+            <div className={`text-xs font-medium mt-0.5 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {fmtUSD(pnl)} P&L
+            </div>
+          </div>
+
+          {/* UP tokens */}
+          <div className="rounded-xl border border-green-400/20 bg-green-400/5 p-4">
+            <div className="text-xs text-muted mb-1">↑ UP tokens</div>
+            <div className="text-xl font-bold text-white tabular-nums">{fmt(state.upQty, 2)}</div>
+            <div className="text-xs text-muted mt-0.5">≈ ${fmt(state.upQty * yesPrice, 2)}</div>
+          </div>
+
+          {/* DOWN tokens */}
+          <div className="rounded-xl border border-red-400/20 bg-red-400/5 p-4">
+            <div className="text-xs text-muted mb-1">↓ DOWN tokens</div>
+            <div className="text-xl font-bold text-white tabular-nums">{fmt(state.downQty, 2)}</div>
+            <div className="text-xs text-muted mt-0.5">≈ ${fmt(state.downQty * noPrice, 2)}</div>
+          </div>
+
+          {/* Trades */}
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            <div className="text-xs text-muted mb-1">Trades</div>
+            <div className="text-xl font-bold text-white tabular-nums">{state.nTrades}</div>
+            <div className="text-xs text-muted mt-0.5">total buy + sell</div>
+          </div>
+        </div>
+
+        {/* Trade panels */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TradePanel
+            dir="up" price={yesPrice}
+            balance={state.balance} held={state.upQty}
+            disabled={tradingDisabled}
+            onBuy={qty => dispatch({ type: 'buy',  dir: 'up', qty, price: yesPrice })}
+            onSell={qty => dispatch({ type: 'sell', dir: 'up', qty, price: yesPrice })}
+          />
+          <TradePanel
+            dir="down" price={noPrice}
+            balance={state.balance} held={state.downQty}
+            disabled={tradingDisabled}
+            onBuy={qty => dispatch({ type: 'buy',  dir: 'down', qty, price: noPrice })}
+            onSell={qty => dispatch({ type: 'sell', dir: 'down', qty, price: noPrice })}
+          />
+        </div>
+      </section>
 
     </div>
   )
