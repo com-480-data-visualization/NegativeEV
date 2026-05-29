@@ -18,6 +18,14 @@ COM-480 Data Visualization · EPFL · Spring 2026
   </a>
 </p>
 
+## Screencast
+
+A 2-minute screencast walking through the project and its main contributions. GitHub does not preview large videos inline, so click **View raw** (or the download button) to play it:
+
+**▶ [`Screencast_M3.mp4`](Screencast_M3.mp4)** · 1:57 · 1080p
+
+<video src="https://github.com/com-480-data-visualization/NegativeEV/raw/master/Screencast_M3.mp4" controls width="100%"></video>
+
 ---
 
 ## The question
