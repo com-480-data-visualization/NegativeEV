@@ -1,6 +1,8 @@
 # NegativeEV website
 
-React 19 + Vite + Tailwind CSS 4. Hand-authored rewrite of the [Lovable prototype](https://negativeev.lovable.app/).
+React 19 + Vite + Tailwind CSS 4. Live site: [https://negative-ev.vercel.app](https://negative-ev.vercel.app).
+
+See the root [README](../README.md) for the full project overview.
 
 ## Development
 

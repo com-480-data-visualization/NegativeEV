@@ -1,5 +1,7 @@
 # NegativeEV - Plot Generation & Data Pipeline
 
+[← Back to README](../README.md)
+
 This document explains every script, data file, and the exact commands needed to
 reproduce all plots. Run all commands from the **repository root**.
 
