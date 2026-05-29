@@ -13,6 +13,11 @@ Writes (under website/public/data/):
 UP/DOWN labelling uses the official `winner_binary` column from the
 per-second parquet (same source as the calibration tooling), so the
 hero stats match the EDA notebook and every chart agrees on outcomes.
+
+Kept as one file on purpose: it's a linear ETL entry point (load -> 8
+self-contained `build_*` functions -> write JSON). Splitting into a
+`builders/` package would scatter 9 trivial modules behind a single
+`main()` call for no read-time gain.
 """
 from __future__ import annotations
 

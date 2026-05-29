@@ -1,349 +1,18 @@
-import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import PriceChart, { type HistoricalSeries } from './PriceChart'
 import CalibrationPanel from './CalibrationPanel'
-import InfoTooltip from './InfoTooltip'
-import PlaygroundSetup, { type PlaygroundMode } from './PlaygroundSetup'
+import PlaygroundSetup from './PlaygroundSetup'
 import PlaygroundSummary from './PlaygroundSummary'
 import { lookupCalibration, type CalibrationLookup } from '../lib/calibration'
+import { INITIAL, reducer, SESSION_MAX, STARTING_BALANCE } from './playground/reducer'
+import { fmt, fmtUSD } from './playground/format'
+import SessionOverlay from './playground/SessionOverlay'
+import SpeedControls from './playground/SpeedControls'
+import SubSectionHeader from './playground/SubSectionHeader'
+import TradePanel from './playground/TradePanel'
 
-// Hard cap on the number of markets a single session can replay (matches
-// the slider's upper bound). The actual cap is min(this, events.length).
-const SESSION_MAX = 50
-const STARTING_BALANCE = 100
+const RESOLUTION_AUTOADVANCE_MS = 3500
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface SecondData {
-  time_remaining: number
-  second: number
-  btc_price: number
-  btc_pct_change: number
-  yes_price: number   // UP token price  (0–1)
-  no_price: number    // DOWN token price (0–1)
-}
-
-interface EventData {
-  index: number
-  event_timestamp: number
-  slug: string
-  winner: string
-  winner_binary: number   // 1 = UP wins, 0 = DOWN wins
-  seconds: SecondData[]   // sorted by second, length = 300
-}
-
-interface Resolution {
-  winner: 'UP' | 'DOWN'
-  winTokens: number
-  loseTokens: number
-  payout: number
-}
-
-interface GameState {
-  events: EventData[]
-  gameIdx: number
-  tick: number          // 0–299 (current second index)
-  balance: number
-  upQty: number
-  downQty: number
-  nTrades: number       // cumulative buy + sell count over the current session
-  // Session lifecycle:
-  //   loading  - waiting for the JSON to come back
-  //   config   - events loaded, user has not started a session yet (or just
-  //              clicked Restart / Play again). Setup overlay is on top.
-  //   playing  - active round, tick timer is running
-  //   resolved - round just ended, 3.5 s win/lose overlay before auto-advance
-  //   finished - the last round of the session has resolved. Summary
-  //              overlay is on top, content behind it is blurred
-  phase: 'loading' | 'config' | 'playing' | 'resolved' | 'finished'
-  resolution: Resolution | null
-  // Session parameters chosen on the setup screen.
-  maxMarkets: number             // 5–SESSION_MAX (capped by events.length)
-  mode: PlaygroundMode           // blind / no-verdict / full
-}
-
-type Action =
-  | { type: 'init'; events: EventData[] }
-  | { type: 'tick' }
-  | { type: 'buy'; dir: 'up' | 'down'; qty: number; price: number }
-  | { type: 'sell'; dir: 'up' | 'down'; qty: number; price: number }
-  | { type: 'next_market' }
-  | { type: 'start_session'; maxMarkets: number; mode: PlaygroundMode }
-  | { type: 'restart_to_config' }
-
-// Fisher-Yates: returns a freshly shuffled COPY so the original array
-// (and any external reference to it) stays untouched. Used by
-// `start_session` to randomise the play order every run.
-function shuffled<T>(arr: readonly T[]): T[] {
-  const out = arr.slice()
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
-// ── Reducer ──────────────────────────────────────────────────────────────────
-function reducer(state: GameState, action: Action): GameState {
-  switch (action.type) {
-
-    case 'init':
-      // Loaded events arrive: drop the user on the setup screen. We don't
-      // auto-start; the user picks the count and difficulty mode first.
-      return { ...state, events: action.events, phase: 'config' }
-
-    case 'tick': {
-      if (state.phase !== 'playing') return state
-      const next = state.tick + 1
-      if (next > 299) {
-        // Market over - resolve outcome from actual price movement
-        const ev = state.events[state.gameIdx]
-        const firstPrice = ev.seconds[0]?.btc_price ?? 0
-        const lastPrice  = ev.seconds[ev.seconds.length - 1]?.btc_price ?? 0
-        const winUp = lastPrice > firstPrice
-        const payout = winUp ? state.upQty : state.downQty
-        return {
-          ...state,
-          balance: state.balance + payout,
-          upQty: 0,
-          downQty: 0,
-          phase: 'resolved',
-          resolution: {
-            winner: winUp ? 'UP' : 'DOWN',
-            winTokens: winUp ? state.upQty : state.downQty,
-            loseTokens: winUp ? state.downQty : state.upQty,
-            payout,
-          },
-        }
-      }
-      return { ...state, tick: next }
-    }
-
-    case 'buy': {
-      if (state.phase !== 'playing') return state
-      const cost = action.qty * action.price
-      if (cost <= 0 || cost > state.balance) return state
-      return {
-        ...state,
-        balance: state.balance - cost,
-        upQty:   action.dir === 'up'   ? state.upQty   + action.qty : state.upQty,
-        downQty: action.dir === 'down' ? state.downQty + action.qty : state.downQty,
-        nTrades: state.nTrades + 1,
-      }
-    }
-
-    case 'sell': {
-      if (state.phase !== 'playing') return state
-      const held = action.dir === 'up' ? state.upQty : state.downQty
-      if (action.qty <= 0 || action.qty > held) return state
-      return {
-        ...state,
-        balance: state.balance + action.qty * action.price,
-        upQty:   action.dir === 'up'   ? state.upQty   - action.qty : state.upQty,
-        downQty: action.dir === 'down' ? state.downQty - action.qty : state.downQty,
-        nTrades: state.nTrades + 1,
-      }
-    }
-
-    case 'next_market': {
-      // End of the bounded session: stop instead of looping back to idx 0.
-      // The summary overlay reads balance / nTrades / maxMarkets / mode
-      // from this same state, so we don't reset anything here.
-      const nextIdx = state.gameIdx + 1
-      if (nextIdx >= state.maxMarkets || nextIdx >= state.events.length) {
-        return { ...state, phase: 'finished', resolution: null }
-      }
-      return {
-        ...state,
-        gameIdx: nextIdx,
-        tick: 0,
-        phase: 'playing',
-        resolution: null,
-      }
-    }
-
-    case 'start_session':
-      // Wipes prior session state (balance / qty / trades) so each run
-      // starts clean, and pins the chosen difficulty for the duration.
-      // The events pool is reshuffled here so two consecutive sessions
-      // never replay the same markets in the same order - keeps the
-      // experience fresh on Play again / Restart.
-      return {
-        ...state,
-        events: shuffled(state.events),
-        gameIdx: 0,
-        tick: 0,
-        balance: STARTING_BALANCE,
-        upQty: 0,
-        downQty: 0,
-        nTrades: 0,
-        resolution: null,
-        phase: 'playing',
-        maxMarkets: action.maxMarkets,
-        mode: action.mode,
-      }
-
-    case 'restart_to_config':
-      // Same wipe as start_session but lands on the config screen instead
-      // of playing. We keep `maxMarkets` and `mode` so the setup card
-      // remembers the user's last choice without forcing them to re-pick.
-      return {
-        ...state,
-        gameIdx: 0,
-        tick: 0,
-        balance: STARTING_BALANCE,
-        upQty: 0,
-        downQty: 0,
-        nTrades: 0,
-        resolution: null,
-        phase: 'config',
-      }
-
-    default:
-      return state
-  }
-}
-
-const INITIAL: GameState = {
-  events: [], gameIdx: 0, tick: 0,
-  balance: STARTING_BALANCE, upQty: 0, downQty: 0,
-  nTrades: 0,
-  phase: 'loading', resolution: null,
-  // Default session: 20 markets, full insight. Same defaults the setup
-  // card lands on - so a user who clicks Start without touching the
-  // controls gets the pedagogical version.
-  maxMarkets: 20, mode: 'full',
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function fmt(n: number, d = 2) { return n.toFixed(d) }
-function fmtUSD(n: number) {
-  const s = Math.abs(n).toFixed(2)
-  return (n >= 0 ? '+$' : '-$') + s
-}
-
-// ── Sub-section header ───────────────────────────────────────────────────────
-// Used INSIDE the playground only. The uppercase tracking-widest accent eyebrow
-// is reserved for the page-level sections in App.tsx (Calibration, Playground).
-interface SubSectionHeaderProps {
-  title: string
-  tooltip?: string
-  right?: ReactNode
-}
-
-function SubSectionHeader({ title, tooltip, right }: SubSectionHeaderProps) {
-  return (
-    <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-border/60">
-      <h3 className="text-base font-semibold text-white flex items-center">
-        <span>{title}</span>
-        {tooltip && <InfoTooltip text={tooltip} />}
-      </h3>
-      {right}
-    </div>
-  )
-}
-
-// ── Trade panel ──────────────────────────────────────────────────────────────
-interface TradePanelProps {
-  dir: 'up' | 'down'
-  price: number
-  balance: number
-  held: number
-  disabled: boolean
-  onBuy: (qty: number) => void
-  onSell: (qty: number) => void
-}
-
-function TradePanel({ dir, price, balance, held, disabled, onBuy, onSell }: TradePanelProps) {
-  const [qty, setQty] = useState('')
-  const [msg, setMsg] = useState('')
-
-  const parsed = parseFloat(qty)
-  const valid  = Number.isFinite(parsed) && parsed > 0
-  const cost   = valid ? parsed * price : 0
-  const canBuy = valid && cost <= balance
-  const canSell = valid && parsed <= held
-  const maxBuy = price > 0 ? Math.floor(balance / price) : 0
-
-  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 2000) }
-
-  const handleBuy = () => {
-    if (!canBuy) { flash(cost > balance ? 'Not enough balance' : 'Enter a valid quantity'); return }
-    onBuy(parsed); setQty(''); flash(`Bought ${fmt(parsed, 1)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
-  }
-  const handleSell = () => {
-    if (!canSell) { flash(parsed > held ? `You only hold ${fmt(held, 2)} tokens` : 'Enter a valid quantity'); return }
-    onSell(parsed); setQty(''); flash(`Sold ${fmt(parsed, 1)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
-  }
-  const handleSellAll = () => {
-    if (held <= 0) { flash('No tokens held'); return }
-    onSell(held); setQty(''); flash(`Sold all ${fmt(held, 2)} ${dir.toUpperCase()} @ $${fmt(price, 4)}`)
-  }
-
-  const isUp = dir === 'up'
-  const accent = isUp ? 'text-green-400' : 'text-red-400'
-  const bg     = isUp ? 'bg-green-400/10 border-green-400/30' : 'bg-red-400/10 border-red-400/30'
-  const btnBuy  = isUp ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'
-  const btnSell = 'bg-slate-600 hover:bg-slate-500'
-
-  return (
-    <div className={`rounded-xl border p-4 flex flex-col gap-3 ${bg}`}>
-      <div className="flex items-center justify-between">
-        <span className={`font-semibold text-sm ${accent}`}>{isUp ? '↑ UP' : '↓ DOWN'} token</span>
-        <span className="text-xs text-muted">Price: <span className="text-white font-mono">${fmt(price, 4)}</span></span>
-      </div>
-
-      {/* Quantity input + quick presets */}
-      <div className="flex gap-2">
-        <input
-          type="number" min="0" step="1" placeholder="Qty"
-          value={qty} onChange={e => setQty(e.target.value)}
-          disabled={disabled}
-          className="flex-1 min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white placeholder-muted focus:outline-none focus:border-accent disabled:opacity-40"
-        />
-        {[10, 100].map(n => (
-          <button key={n} onClick={() => setQty(String(n))} disabled={disabled}
-            className="px-2 py-1 rounded-lg border border-border bg-surface text-xs text-muted hover:text-white hover:border-accent transition-colors disabled:opacity-30 shrink-0">
-            {n}
-          </button>
-        ))}
-        <button
-          onClick={() => setQty(String(maxBuy))}
-          disabled={disabled || maxBuy <= 0}
-          title={`Max tokens you can buy at $${fmt(price, 4)}: ${maxBuy}`}
-          className="px-2 py-1 rounded-lg border border-border bg-surface text-xs text-muted hover:text-white hover:border-accent transition-colors disabled:opacity-30 shrink-0"
-        >
-          max
-        </button>
-      </div>
-
-      {valid && (
-        <div className="text-xs text-muted">
-          Cost: <span className="text-white">${fmt(cost, 2)}</span>
-          {' · '}Payout: <span className={accent}>${fmt(parsed, 2)}</span>
-          <span className="text-muted/70"> if {isUp ? '↑ UP' : '↓ DOWN'} wins</span>
-        </div>
-      )}
-
-      {/* Buy / Sell / Sell All */}
-      <div className="flex gap-2">
-        <button onClick={handleBuy} disabled={disabled || !canBuy}
-          className={`flex-1 rounded-lg py-2 text-sm font-semibold text-white transition-colors disabled:opacity-30 ${btnBuy}`}>
-          Buy
-        </button>
-        <button onClick={handleSell} disabled={disabled || !canSell}
-          className={`flex-1 rounded-lg py-2 text-sm font-semibold text-white transition-colors disabled:opacity-30 ${btnSell}`}>
-          Sell
-        </button>
-        <button onClick={handleSellAll} disabled={disabled || held <= 0}
-          className="rounded-lg px-3 py-2 text-xs font-semibold text-white bg-slate-700 hover:bg-slate-600 transition-colors disabled:opacity-30 shrink-0">
-          All
-        </button>
-      </div>
-      {msg && <p className="text-xs text-center text-muted animate-pulse">{msg}</p>}
-    </div>
-  )
-}
-
-// ── Main component ───────────────────────────────────────────────────────────
 export default function Playground() {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const [speed, setSpeed] = useState(3)   // 1x = 1 tick/s, 3x default
@@ -366,7 +35,9 @@ export default function Playground() {
       .catch(e => console.error('Failed to load calibration lookup', e))
   }, [])
 
-  // Tick timer
+  // Tick timer. `state.gameIdx` is in the deps so the interval re-arms
+  // between markets (the previous one's interval is cleared, even when the
+  // phase happens to be 'playing' at both moments).
   useEffect(() => {
     if (state.phase !== 'playing' || paused) return
     const id = setInterval(() => dispatch({ type: 'tick' }), 1000 / speed)
@@ -376,7 +47,7 @@ export default function Playground() {
   // Auto-advance after resolution
   useEffect(() => {
     if (state.phase !== 'resolved') return
-    const id = setTimeout(() => dispatch({ type: 'next_market' }), 3500)
+    const id = setTimeout(() => dispatch({ type: 'next_market' }), RESOLUTION_AUTOADVANCE_MS)
     return () => clearTimeout(id)
   }, [state.phase, state.gameIdx])
 
@@ -389,7 +60,7 @@ export default function Playground() {
 
   // Portfolio value including open token positions
   const portfolioValue = state.balance + state.upQty * yesPrice + state.downQty * noPrice
-  const pnl = portfolioValue - 100
+  const pnl = portfolioValue - STARTING_BALANCE
 
   const isResolved = state.phase === 'resolved'
   const isPlaying  = state.phase === 'playing'
@@ -443,61 +114,6 @@ export default function Playground() {
   // preserves the previously chosen mode/maxMarkets so the setup card
   // stays on whatever the user picked last.
   const canRestart = isPlaying || isResolved
-  const speedControls = (
-    <div className="flex items-center gap-2">
-      {canRestart && (
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'restart_to_config' })}
-          title="End this session and return to setup"
-          aria-label="Restart session"
-          // Amber outline + tinted fill so the button reads as
-          // "destructive but reversible" (matches the verdict's amber
-          // off-baseline accent) and stands out from the muted speed
-          // pills without being alarming red.
-          className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded border border-amber-400/50 bg-amber-400/10 text-xs font-semibold text-amber-300 hover:bg-amber-400/20 hover:text-amber-200 hover:border-amber-400/70 transition-colors"
-        >
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M2 8a6 6 0 1 1 1.8 4.3" />
-            <path d="M2 14v-4h4" />
-          </svg>
-          Restart
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={() => setPaused(p => !p)}
-        aria-label={paused ? 'Resume' : 'Pause'}
-        title={paused ? 'Resume' : 'Pause'}
-        className="inline-flex items-center justify-center w-7 h-7 rounded bg-surface-elevated text-gray-200 hover:text-white hover:bg-accent transition-colors"
-      >
-        {paused ? (
-          // Play icon
-          <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
-            <path d="M0 0 L10 6 L0 12 Z" />
-          </svg>
-        ) : (
-          // Pause icon
-          <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
-            <rect x="0" y="0" width="3" height="12" />
-            <rect x="7" y="0" width="3" height="12" />
-          </svg>
-        )}
-      </button>
-
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-muted mr-1">Speed:</span>
-        {[1, 3, 6, 10, 20].map(s => (
-          <button key={s} onClick={() => setSpeed(s)}
-            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-              speed === s ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white'
-            }`}>
-            {s}×
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 
   // Phase-driven overlay state. In config/finished we render the playground
   // content normally (so the blur reads as "this is what's waiting for you")
@@ -553,7 +169,19 @@ export default function Playground() {
 
       {/* ── 2. Live market ───────────────────────────────────────────────── */}
       <section>
-        <SubSectionHeader title="Live market" right={speedControls} />
+        <SubSectionHeader
+          title="Live market"
+          right={
+            <SpeedControls
+              speed={speed}
+              paused={paused}
+              canRestart={canRestart}
+              onSpeedChange={setSpeed}
+              onTogglePause={() => setPaused(p => !p)}
+              onRestart={() => dispatch({ type: 'restart_to_config' })}
+            />
+          }
+        />
 
         {/* Market meta strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
@@ -688,78 +316,30 @@ export default function Playground() {
 
       </div>
 
-      {/* ── Gating overlay (setup before play, summary after) ──────────────
-          Split into two stacked layers so we can fully blur the
-          playground AND get a soft, fluffy outer edge:
-            • Layer 1 (z-10): backdrop-blur + tint, intentionally sized
-              MUCH LARGER than the playground via a negative inset. The
-              mask gradient feathers the alpha to 0 well outside the
-              playground bounds, so what the user sees inside the
-              playground rectangle is the fully opaque middle of the
-              mask (= fully blurred), and only the halo outside the
-              playground softly dissolves into the page.
-            • Layer 2 (z-20): a transparent flex container holding the
-              setup or summary card. No mask, no blur, so the card is
-              always crisp regardless of where the backdrop is fading. */}
+      {/* Setup-before-play / summary-after gating overlay */}
       {isOverlay && (
-        <>
-          <div
-            aria-hidden
-            className="absolute z-10 backdrop-blur-lg bg-surface/60 pointer-events-none"
-            style={{
-              // Asymmetric extension constrained on the top and bottom
-              // so the blur never bleeds onto the SectionHeader above
-              // (only 2 rem of breathing room there) or the Footer
-              // below (the parent section's `pb-28` = 7 rem gives us a
-              // 5 rem safety belt to spend). Sides stay generous so the
-              // horizontal halo still feels soft.
-              top:    '-1.5rem',
-              right:  '-14rem',
-              bottom: '-5rem',
-              left:   '-14rem',
-              // Vertical mask: tight 2 % top fade and 5 % bottom fade
-              // so both fade regions live entirely inside their (small)
-              // extensions and don't dim the playground content itself.
-              // Horizontal mask: symmetric 12 % fade on each side -
-              // those still have 14 rem of runway, so the soft halo
-              // shows up where you can afford it. Composited with
-              // `intersect` to form the rectangular vignette. Both
-              // unprefixed and -webkit- properties are set for Safari.
-              WebkitMaskImage:
-                'linear-gradient(to bottom, transparent 0%, #000 2%, #000 95%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)',
-              WebkitMaskComposite: 'source-in',
-              maskImage:
-                'linear-gradient(to bottom, transparent 0%, #000 2%, #000 95%, transparent 100%), linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%)',
-              maskComposite: 'intersect',
-            }}
-          />
-          <div
-            className="absolute inset-0 z-20 flex items-start justify-center px-4 pt-12 sm:pt-20"
-            aria-modal="true"
-            role="dialog"
-          >
-            {isConfig && (
-              <PlaygroundSetup
-                maxAvailable={maxAvailable}
-                defaultMarkets={state.maxMarkets}
-                defaultMode={state.mode}
-                onStart={(maxMarkets, mode) =>
-                  dispatch({ type: 'start_session', maxMarkets, mode })
-                }
-              />
-            )}
-            {isFinished && (
-              <PlaygroundSummary
-                startingBalance={STARTING_BALANCE}
-                finalBalance={state.balance}
-                marketsPlayed={state.maxMarkets}
-                nTrades={state.nTrades}
-                mode={state.mode}
-                onPlayAgain={() => dispatch({ type: 'restart_to_config' })}
-              />
-            )}
-          </div>
-        </>
+        <SessionOverlay>
+          {isConfig && (
+            <PlaygroundSetup
+              maxAvailable={maxAvailable}
+              defaultMarkets={state.maxMarkets}
+              defaultMode={state.mode}
+              onStart={(maxMarkets, mode) =>
+                dispatch({ type: 'start_session', maxMarkets, mode })
+              }
+            />
+          )}
+          {isFinished && (
+            <PlaygroundSummary
+              startingBalance={STARTING_BALANCE}
+              finalBalance={state.balance}
+              marketsPlayed={state.maxMarkets}
+              nTrades={state.nTrades}
+              mode={state.mode}
+              onPlayAgain={() => dispatch({ type: 'restart_to_config' })}
+            />
+          )}
+        </SessionOverlay>
       )}
     </div>
   )

@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { buildPath, distributeLabels } from './priceChart/helpers'
+import LabelPair from './priceChart/LabelPair'
+import LegendButton from './priceChart/LegendButton'
 
 interface SecondData {
   second: number
@@ -22,53 +25,12 @@ const PAD = { top: 44, bottom: 28, left: 60, right: 130 }
 const ACCENT = '#c084fc'       // live implied - project accent violet
 const SKY = '#38bdf8'          // historical implied - sky blue
 const AMBER = '#fbbf24'        // historical realized - amber
+const GREEN = '#22c55e'        // BTC line/dot when last move is positive
+const RED   = '#ef4444'        // BTC line/dot when last move is negative
 
 // Min vertical gap between right-side current-value labels.
 const LABEL_MIN_GAP = 26
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-// SVG path that gracefully skips null points (creates gaps in the line).
-function buildPath(points: { x: number; y: number | null }[]): string {
-  let out = ''
-  let lastValid = false
-  for (const p of points) {
-    if (p.y == null) {
-      lastValid = false
-    } else {
-      out += `${lastValid ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)} `
-      lastValid = true
-    }
-  }
-  return out.trim()
-}
-
-// Distribute label y-positions so consecutive ones are ≥ minGap apart.
-// Returns new positions in the same order as the input.
-function distributeLabels(positions: number[], minGap: number, lo: number, hi: number): number[] {
-  if (positions.length === 0) return []
-  const sorted = positions.map((y, i) => ({ y, i })).sort((a, b) => a.y - b.y)
-  // Forward pass: enforce min gap
-  for (let k = 1; k < sorted.length; k++) {
-    if (sorted[k].y - sorted[k - 1].y < minGap) {
-      sorted[k].y = sorted[k - 1].y + minGap
-    }
-  }
-  // Clamp upper bound (pull stack up if last overflows)
-  if (sorted[sorted.length - 1].y > hi) {
-    const shift = sorted[sorted.length - 1].y - hi
-    for (const it of sorted) it.y -= shift
-  }
-  // Clamp lower bound (push stack down if first overflows)
-  if (sorted[0].y < lo) {
-    const shift = lo - sorted[0].y
-    for (const it of sorted) it.y += shift
-  }
-  const result = positions.slice()
-  for (const it of sorted) result[it.i] = it.y
-  return result
-}
-
-// ── Component ────────────────────────────────────────────────────────────────
 export default function PriceChart({ seconds, historical, currentSecond }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(700)
@@ -121,9 +83,7 @@ export default function PriceChart({ seconds, historical, currentSecond }: Props
   const lastImplied = visibleData[lastIdx]?.yes_price ?? 0.5
   const lastHistImp = historical?.implied[lastIdx] ?? null
   const lastHistReal = historical?.realized[lastIdx] ?? null
-  const green = '#22c55e'
-  const red   = '#ef4444'
-  const btcColor = isPos ? green : red
+  const btcColor = isPos ? GREEN : RED
 
   // ── Paths ──────────────────────────────────────────────────────────────────
   const btcPoints = visibleData.map(d => ({
@@ -388,60 +348,5 @@ export default function PriceChart({ seconds, historical, currentSecond }: Props
         })()}
       </svg>
     </div>
-  )
-}
-
-// ── Small reusable label group for the right-side current values ───────────
-function LabelPair({ cx, cy, color, main, sub }: {
-  cx: number; cy: number; color: string; main: string; sub: string
-}) {
-  return (
-    <g>
-      <text x={cx} y={cy - 2} fontSize={11} fontWeight="600" fill={color}>
-        {main}
-      </text>
-      <text x={cx} y={cy + 10} fontSize={9} fill={color} opacity={0.75}>
-        {sub}
-      </text>
-    </g>
-  )
-}
-
-// ── Legend toggle button ───────────────────────────────────────────────────
-// MUST live at module scope (not inside PriceChart) - defining it in the
-// component body would create a fresh function reference on every tick,
-// which React treats as a different component type and unmount/remount-s
-// each button, causing visible blinks and a brief un-clickable window.
-function LegendButton({
-  active, onClick, disabled, swatchColor, dashed, children,
-}: {
-  active: boolean
-  onClick: () => void
-  disabled?: boolean
-  swatchColor: string
-  dashed?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition-all ${
-        active
-          ? 'border-border bg-surface text-gray-200 hover:border-accent'
-          : 'border-border/40 bg-transparent text-muted opacity-50 hover:opacity-80'
-      } disabled:cursor-not-allowed disabled:hover:border-border`}
-    >
-      {dashed ? (
-        <svg width="14" height="2" className="inline-block">
-          <line x1="0" y1="1" x2="14" y2="1" stroke={swatchColor} strokeWidth="2" strokeDasharray="4 2" />
-        </svg>
-      ) : (
-        <span className="inline-block w-[14px] h-[2px]" style={{ background: swatchColor }} />
-      )}
-      {children}
-    </button>
   )
 }

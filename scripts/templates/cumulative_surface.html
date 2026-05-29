@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UP cumulative 3D calibration surfaces</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+  <style>
+    :root {
+      --bg: {BG};
+      /* Panel/border/accent picked to match the website tokens so the
+         iframe reads as a continuation of the parent card. */
+      --panel: #1f2330;
+      --panel2: #262b39;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #2a2f3d;
+      --accent: #c084fc;       /* violet-400 (matches --color-accent) */
+      --accent-strong: #d8b4fe;/* violet-300, used as active-button rim */
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    #toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(22, 25, 34, 0.96);
+      border-bottom: 1px solid var(--border);
+      box-sizing: border-box;
+      z-index: 2;
+    }
+    #titleBlock { min-width: 0; }
+    #title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #subtitle {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    button {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--panel);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button:hover { border-color: var(--accent); }
+    button.active {
+      background: var(--accent);
+      border-color: var(--accent-strong);
+      color: white;
+    }
+    #chart { width: 100%; height: 100%; }
+    #note {
+      position: absolute;
+      left: 16px;
+      bottom: 12px;
+      max-width: 760px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(22, 25, 34, 0.74);
+      border: 1px solid rgba(42, 47, 61, 0.8);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <div id="titleBlock">
+        <div id="title">UP 3D calibration surfaces</div>
+        <div id="subtitle">Loading...</div>
+      </div>
+      <div id="controls">
+        <button data-mode="realized" class="active">Realized</button>
+        <button data-mode="implied">Implied</button>
+        <button data-mode="gap">Gap</button>
+      </div>
+    </div>
+    <div id="chart"></div>
+  </div>
+  <div id="note">Drag to rotate · Scroll to zoom · Click Realized / Implied / Gap to switch views</div>
+
+  <script id="surface-data" type="application/json">{payload_json}</script>
+  <script>
+    const PAYLOAD = JSON.parse(document.getElementById('surface-data').textContent);
+    const chart = echarts.init(document.getElementById('chart'), null, { renderer: 'canvas' });
+    let currentMode = 'realized';
+
+    function fmtPct(x) {
+      const sign = x >= 0 ? '+' : '';
+      return sign + Number(x).toFixed(2) + '%';
+    }
+    function fmt4(x) {
+      return Number(x).toFixed(4);
+    }
+    function fmtSigned4(x) {
+      const sign = x >= 0 ? '+' : '';
+      return sign + Number(x).toFixed(4);
+    }
+    function fmtInt(x) {
+      return Math.round(Number(x)).toLocaleString();
+    }
+
+    function colorsFor(ds) {
+      if (ds.palette === 'gap') {
+        // blue (under-pricing) → deep violet (neutral) → red (over-pricing) - no white so structure is visible
+        return ['#1d4ed8', '#7c3aed', '#dc2626'];
+      }
+      // red (P=0) → amber → green (P=1): traffic-light for cumulative UP probability
+      return ['#dc2626', '#f59e0b', '#16a34a'];
+    }
+
+    function tooltipFormatter(params) {
+      const v = params.value;
+      // v = [time_remaining, y_threshold, z_surface, realized, implied, gap, matchCount, upCount, implCount]
+      const time     = v[0];
+      const y        = v[1];
+      const realized = v[3];
+      const implied  = v[4];
+      const gap      = v[5];
+      const matchAll = v[7];   // all markets where condition is met
+      const matchUp  = v[6];   // UP markets where condition is met
+
+      const bold = (s) => `<b>${s}</b>`;
+      const r = currentMode === 'realized';
+      const i = currentMode === 'implied';
+      const g = currentMode === 'gap';
+
+      const realFmt = isFinite(realized) ? fmt4(realized) : '-';
+      const implFmt = isFinite(implied)  ? fmt4(implied)  : '-';
+      const gapFmt  = isFinite(gap)      ? fmtSigned4(gap) : '-';
+
+      // Show the directional condition
+      const yFmt = fmtPct(y);
+      const condition = y >= 0
+        ? `BTC Δ ≥ ${yFmt}`
+        : `BTC Δ ≤ ${yFmt}`;
+
+      // Smoothed counts: UP / total = displayed probability (consistent)
+      const matchTotal = Math.round(matchAll);
+      const matchUP    = Math.round(matchUp);
+
+      return `
+        <div style="min-width:320px;line-height:1.7;font-size:12px">
+          <div style="font-weight:700;margin-bottom:4px">P(UP | condition met at time T)</div>
+          <div>Time remaining: <b>${time} s</b></div>
+          <div>Condition: <b>${condition}</b></div>
+          <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
+          <div>Effective count: <b>${fmtInt(matchTotal)}</b></div>
+          <div>UP outcomes: <b>${fmtInt(matchUP)}</b></div>
+          <hr style="border:none;border-top:1px solid #475569;margin:5px 0" />
+          <div>Realized P(UP): ${r ? bold(realFmt) : realFmt}</div>
+          <div>Implied P(UP): ${i ? bold(implFmt) : implFmt}</div>
+          <div>Gap (realized − implied): ${g ? bold(gapFmt) : gapFmt}</div>
+        </div>
+      `;
+    }
+
+    function makeOption(mode) {
+      const ds = PAYLOAD.datasets[mode];
+      const colors = colorsFor(ds);
+      const titleText = ds.title;
+      const subtitleText = ds.subtitle;
+      document.getElementById('title').textContent = titleText;
+      document.getElementById('subtitle').textContent = subtitleText;
+
+      const isGap = mode === 'gap';
+      return {
+        backgroundColor: '{BG}',
+        animation: false,
+        tooltip: {
+          show: true,
+          trigger: 'item',
+          confine: true,
+          backgroundColor: 'rgba(22, 25, 34, 0.96)',
+          borderColor: '#2a2f3d',
+          textStyle: { color: '#e5e7eb', fontSize: 12 },
+          formatter: tooltipFormatter,
+        },
+        visualMap: {
+          show: true,
+          calculable: true,
+          realtime: false,
+          dimension: 2,
+          min: ds.visualMin,
+          max: ds.visualMax,
+          precision: 3,
+          text: [String(ds.visualMax), String(ds.visualMin)],
+          textStyle: { color: '#e5e7eb' },
+          inRange: { color: colors },
+          orient: 'vertical',
+          right: 18,
+          top: 86,
+        },
+        xAxis3D: {
+          type: 'value',
+          name: 'Time remaining (s)',
+          min: PAYLOAD.meta.timeMin,
+          max: PAYLOAD.meta.timeMax,
+          inverse: true,
+          nameTextStyle: { color: '#e5e7eb' },
+          axisLabel: { color: '#cbd5e1', hideOverlap: true },
+          axisLine: { lineStyle: { color: '#94a3b8' } },
+          splitLine: { lineStyle: { color: '#334155' } },
+        },
+        yAxis3D: {
+          type: 'value',
+          name: 'BTC Δ threshold (%)',
+          min: PAYLOAD.meta.yMin,
+          max: PAYLOAD.meta.yMax,
+          nameTextStyle: { color: '#e5e7eb' },
+          axisLabel: {
+            color: '#cbd5e1',
+            formatter: function(value) { return fmtPct(value); }
+          },
+          axisLine: { lineStyle: { color: '#94a3b8' } },
+          splitLine: { lineStyle: { color: '#334155' } },
+        },
+        zAxis3D: {
+          type: 'value',
+          name: ds.zName,
+          min: ds.zMin,
+          max: ds.zMax,
+          nameTextStyle: { color: '#e5e7eb' },
+          axisLabel: { color: '#cbd5e1' },
+          axisLine: { lineStyle: { color: '#94a3b8' } },
+          splitLine: { lineStyle: { color: '#334155' } },
+        },
+        grid3D: {
+          boxWidth: 160,
+          boxDepth: 100,
+          boxHeight: isGap ? 78 : 90,
+          environment: '{BG}',
+          axisPointer: { show: true },
+          viewControl: {
+            projection: 'perspective',
+            autoRotate: false,
+            alpha: 26,
+            beta: -42,
+            // Pulled back from the original 220 so the three axis
+            // titles (Time remaining / BTC Δ threshold / Z name) sit
+            // inside the viewport at the default zoom level.
+            distance: 290,
+            minDistance: 80,
+            maxDistance: 420,
+          },
+          light: {
+            main: { intensity: 1.2, shadow: false },
+            ambient: { intensity: 0.55 },
+          },
+          postEffect: { enable: false },
+          temporalSuperSampling: { enable: false },
+        },
+        series: [{
+          type: 'surface',
+          name: ds.zName,
+          data: ds.data,
+          shading: 'color',
+          wireframe: { show: false },
+          itemStyle: { opacity: 0.97 },
+          silent: false,
+        }]
+      };
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('button[data-mode]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      chart.setOption(makeOption(mode), true);
+    }
+
+    document.querySelectorAll('button[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    window.addEventListener('resize', () => chart.resize());
+    setMode(currentMode);
+  </script>
+</body>
+</html>

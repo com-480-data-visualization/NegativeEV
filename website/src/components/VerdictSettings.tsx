@@ -1,28 +1,10 @@
-// Settings panel that controls how the verdict switches between its two
-// regimes and how aggressively it sizes the contrarian bet:
-//   - edgeThresholdPp : |Live − RealizedHist| in pp at which we flip from
-//                       "follow the live price" to "bet against the live
-//                       price toward the historical baseline"
-//   - minSamples      : min historical bucket samples required to trust
-//                       the calibration lookup at all (else verdict = Wait)
-//   - kellyFraction   : 0 (off) | 0.25 | 0.5 | 1.0 - bet size as a fraction
-//                       of bankroll, only applied in the bet-against branch
-//   - showVarianceBand: whether to surface the expected return ± 1σ range
-//                       and P(profit ≥ 0) over the remaining markets
-//   - verdictHoldSec  : 0-30 - dampens tick-by-tick verdict flicker. A new
-//                       action only takes over after it has been raw for
-//                       this many seconds in a row. Implemented in
-//                       CalibrationPanel via a useRef cache; 0 = off.
-//
-// Every control gets a paired InfoTooltip ("i" popup) so a curious user
-// can find out *why* the knob matters without needing the verdict body
-// to be open. Inline helper text stays short and operational; the long
-// "what it means in the two-regime model" copy lives in the tooltip.
-//
-// These are deliberately surfaced to the user because the EV is computed
-// on the historical lookup (≈9k markets) whereas the simulator only runs
-// 50 - variance over such a small sample dominates the expected return on
-// thin divergences.
+// Settings panel for the verdict logic: regime-switch sensitivity
+// (edgeThresholdPp), bet sizing (kellyFraction), confidence band
+// (showVarianceBand), data-quality floor (minSamples) and verdict
+// hysteresis (verdictHoldSec). Each knob ships with an InfoTooltip so
+// the user can find out *why* it matters without opening the verdict.
+// We surface them because the historical EV is computed on ~9k markets
+// while a session only replays a few dozen: variance can swamp the mean.
 
 import InfoTooltip from './InfoTooltip'
 

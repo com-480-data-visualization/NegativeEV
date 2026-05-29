@@ -16,6 +16,15 @@ const RED   = '#ef4444'
 const DIM   = '#1e3a5f'
 const GRAY  = '#64748b'
 
+// Simulation playback speed pills. `ms` is the per-step delay used by the
+// timer; the label is what we render on the button. Hoisted out of the
+// JSX so the array isn't re-allocated on every render.
+const SPEED_OPTIONS = [
+  { ms: 500, label: '1×' },
+  { ms: 250, label: '2×' },
+  { ms: 100, label: '4×' },
+] as const
+
 // ── Geometry ──────────────────────────────────────────────────────────────────
 type Pt = [number, number]
 
@@ -293,11 +302,11 @@ export default function MarkovDiagram() {
           )}
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-muted">Speed:</span>
-            {[{ms:500,l:'1×'},{ms:250,l:'2×'},{ms:100,l:'4×'}].map(s => (
+            {SPEED_OPTIONS.map(s => (
               <button key={s.ms} onClick={() => setSpeed(s.ms)}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                   speed === s.ms ? 'bg-accent text-white' : 'bg-surface-elevated text-muted hover:text-white border border-border'
-                }`}>{s.l}</button>
+                }`}>{s.label}</button>
             ))}
           </div>
         </div>

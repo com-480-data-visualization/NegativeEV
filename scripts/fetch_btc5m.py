@@ -9,7 +9,7 @@ import os
 import sys
 import time
 import csv
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 sys.stdout.reconfigure(encoding="utf-8")
 
