@@ -133,7 +133,9 @@ Full reproduction guide — every script, every flag, every output path, plus th
 
 ## Methodology disclosure (AI-assisted tools)
 
-Two distinct phases used AI assistants. The data-cleaning pipeline (~15 GB raw JSON to ~6 MB tabular and JSON) was developed iteratively with Cursor + Claude Code, with all code reviewed and run locally. The first React + Tailwind frontend was bootstrapped with Lovable as a design-exploration tool to lock the information architecture and visual identity; the live site at https://negative-ev.vercel.app is the hand-authored rewrite that replaced it.
+AI-assisted tools were used during two phases of the project. The data-cleaning pipeline, which transformed roughly 15 GB of raw JSON into compact tabular and JSON files, was developed iteratively with Cursor and Claude Code. The generated code was reviewed, adapted, and executed locally by the team.
+
+For the frontend, Lovable was used during the early design-exploration phase to prototype the React and Tailwind interface, test the information architecture, and converge on a visual identity. The final live site at https://negative-ev.vercel.app builds on these explorations, with the team adapting, restructuring, and integrating the components into the final project.
 
 ## References and acknowledgements
 
