@@ -60,16 +60,16 @@ Built from scratch by querying the [Polymarket API](https://docs.polymarket.com/
 
 The site is a single scrollable page that walks the reader through the calibration question step by step. Sections, in reading order ([website/src/App.tsx](website/src/App.tsx)):
 
-1. **Hero** — animated outcome split and dataset counters.
-2. **Intro** — what these markets are and why 5 minutes is hard.
-3. **Calibration surface** — the centrepiece. Interactive 3D ECharts GL surface of `P(Up | BTC Δ, time remaining)` versus the 50 % reference plane.
-4. **Statistics** — dataset shape: BTC Δ histogram, daily volume, trades-per-market.
-5. **Temporal** — day-of-week × hour heatmaps (volume and Up rate).
-6. **Distributions** — fat-tail behaviour of price moves and the volume-vs-Δ scatter.
-7. **Markov** — empirical transition matrix on the ordered sequence of 9,181 outcomes, with an animated 20-step random walk and a streak-length histogram.
-8. **Calibration over time** — 2D companion that reads the surface back as calibration curves at four moments before close.
-9. **Verdict** — synthesis of the findings and an off-baseline / calibrated framing.
-10. **Playground** — a backtest in 50 sequential live markets with $100 of virtual capital, fed by the empirical calibration lookup.
+1. **Hero:** animated outcome split and dataset counters.
+2. **Intro:** what these markets are and why 5 minutes is hard.
+3. **Calibration surface:** the centrepiece. Interactive 3D ECharts GL surface of `P(Up | BTC Δ, time remaining)` versus the 50 % reference plane.
+4. **Statistics:** dataset shape: BTC Δ histogram, daily volume, trades-per-market.
+5. **Temporal:** day-of-week × hour heatmaps (volume and Up rate).
+6. **Distributions:** fat-tail behaviour of price moves and the volume-vs-Δ scatter.
+7. **Markov:** empirical transition matrix on the ordered sequence of 9,181 outcomes, with an animated 20-step random walk and a streak-length histogram.
+8. **Calibration over time:** 2D companion that reads the surface back as calibration curves at four moments before close.
+9. **Verdict:** synthesis of the findings and an off-baseline / calibrated framing.
+10. **Playground:** a backtest in 50 sequential live markets with $100 of virtual capital, fed by the empirical calibration lookup.
 
 Per-section design rationale (encoding choices, interactions, rejected alternatives) lives in [docs/visualizations.md](docs/visualizations.md).
 
