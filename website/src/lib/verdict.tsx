@@ -76,13 +76,16 @@ export function tradeVerdict(
     }
   }
 
-  // From here on the lookup is valid: hand off to the regime branch.
-  const R = point.realized
+  // From here on the lookup is valid (the `noLookupData` guard above
+  // proved both fields non-null). TS doesn't propagate that narrowing
+  // through the local `noLookupData` const, so we assert directly.
+  const R = point.realized as number
   const L = liveImplied
+  const gap = realityGap as number
   const edgeThreshold = settings.edgeThresholdPp / 100
-  const shared = { R, L, realityGap, n: point.n, hasUp, hasDown, settings } as const
+  const shared = { R, L, realityGap: gap, n: point.n, hasUp, hasDown, settings } as const
 
-  if (Math.abs(realityGap) < edgeThreshold) {
+  if (Math.abs(gap) < edgeThreshold) {
     return calibratedVerdict(shared)
   }
   return offBaselineVerdict({

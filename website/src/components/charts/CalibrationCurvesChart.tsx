@@ -99,15 +99,19 @@ export default function CalibrationCurvesChart({ maxSize = 520 }: Props = {}) {
     if (!rect) return
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
+    // Plain for-loops (not forEach) so TS keeps `best` narrowed to its
+    // declared union type rather than collapsing it to `never` after the
+    // initial `null` assignment.
     let best: { ci: number; pi: number; d2: number } | null = null
     for (const s of series) {
       if (hidden.has(s.ci)) continue
-      s.pts.forEach((pt, pi) => {
+      for (let pi = 0; pi < s.pts.length; pi++) {
+        const pt = s.pts[pi]
         const dx = pt.x - mx
         const dy = pt.y - my
         const d2 = dx * dx + dy * dy
         if (!best || d2 < best.d2) best = { ci: s.ci, pi, d2 }
-      })
+      }
     }
     if (best && best.d2 < 40 * 40) setHover({ ci: best.ci, pi: best.pi })
     else setHover(null)
